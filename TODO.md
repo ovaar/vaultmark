@@ -246,113 +246,113 @@ App
 **Goal:** Runnable skeleton with Tauri + React
 
 - [x] Initialize Git repository
-- [ ] Scaffold Tauri 2.0 project (`cargo create-tauri-app`)
-- [ ] Configure `tauri.conf.json` (app name, window, security)
-- [ ] Setup React + TypeScript + Vite
-- [ ] Install core dependencies (zustand, react-markdown, codemirror)
+- [x] Scaffold Tauri 2.0 project (`cargo create-tauri-app`)
+- [x] Configure `tauri.conf.json` (app name, window, security)
+- [x] Setup React + TypeScript + Vite
+- [x] Install core dependencies (zustand, react-markdown, codemirror)
 - [ ] Configure ESLint + Prettier
-- [ ] Verify `cargo tauri dev` runs successfully
-- [ ] Setup Tauri 2.0 capabilities/permissions
+- [x] Verify `cargo tauri dev` runs successfully
+- [x] Setup Tauri 2.0 capabilities/permissions
 
 ### 🏁 Sprint 1 — Core File System (Backend)
 **Goal:** Rust file operations fully functional
 
-- [ ] Create `models/file.rs` — FileEntry, FileContent structs
-- [ ] Create `services/file_service.rs` — CRUD operations
-- [ ] Create `commands/file_commands.rs` — Tauri command handlers
-- [ ] Implement `list_files` — recursive directory listing
-- [ ] Implement `read_file` — read content with metadata
-- [ ] Implement `write_file` — write with atomic save
-- [ ] Implement `delete_file` — safe delete with confirmation data
-- [ ] Implement `rename_file` — move/rename support
-- [ ] Implement `create_directory` — nested creation
-- [ ] Create `errors.rs` — unified error handling
+- [x] Create `models/file.rs` — FileEntry, FileContent structs
+- [x] Create `services/file_service.rs` — CRUD operations
+- [x] Create `commands/file_commands.rs` — Tauri command handlers
+- [x] Implement `list_files` — recursive directory listing
+- [x] Implement `read_file` — read content with metadata
+- [x] Implement `write_file` — write with atomic save
+- [x] Implement `delete_file` — safe delete with confirmation data
+- [x] Implement `rename_file` — move/rename support
+- [x] Implement `create_directory` — nested creation
+- [x] Create `errors.rs` — unified error handling
 - [ ] Unit tests for file_service
 
 ### 🏁 Sprint 2 — Frontend Shell & File Tree
 **Goal:** Navigable file tree with working CRUD
 
-- [ ] Create `AppLayout` component (sidebar + editor area)
-- [ ] Create `Sidebar` component
-- [ ] Create `FileTree` component with recursive rendering
-- [ ] Create `FileTreeItem` with icons and context menu
-- [ ] Create `fileStore` (Zustand) — tree state, selection
-- [ ] Wire `tauriFileService.ts` — frontend service calling IPC
-- [ ] Create/delete/rename files via context menu
-- [ ] Create new folders
-- [ ] Display file tree on startup (vault root)
-- [ ] Basic CSS layout (flexbox sidebar + main area)
+- [x] Create `AppLayout` component (sidebar + editor area)
+- [x] Create `Sidebar` component
+- [x] Create `FileTree` component with recursive rendering
+- [x] Create `FileTreeItem` with icons and context menu
+- [x] Create `fileStore` (Zustand) — tree state, selection
+- [x] Wire `tauriFileService.ts` — frontend service calling IPC
+- [x] Create/delete/rename files via context menu
+- [x] Create new folders
+- [x] Display file tree on startup (vault root)
+- [x] Basic CSS layout (flexbox sidebar + main area)
 - [ ] Keyboard navigation in file tree
 
 ### 🏁 Sprint 3 — Markdown Editor & Preview
 **Goal:** Full markdown editing experience
 
-- [ ] Integrate CodeMirror 6 with markdown mode
-- [ ] Create `MarkdownEditor` component
-- [ ] Create `Preview` component (react-markdown + remark-gfm)
-- [ ] Split-pane layout (editor | preview)
-- [ ] Toggle between edit / preview / split modes
-- [ ] Create `editorStore` — content, dirty state
-- [ ] Syntax highlighting in editor
-- [ ] Autosave with debounce (1.5s)
-- [ ] `useAutosave` hook
-- [ ] Tab support (multiple open files)
-- [ ] `EditorTabs` component
-- [ ] Unsaved changes indicator (dot on tab)
+- [x] Integrate CodeMirror 6 with markdown mode
+- [x] Create `MarkdownEditor` component
+- [x] Create `Preview` component (react-markdown + remark-gfm)
+- [x] Split-pane layout (editor | preview)
+- [x] Toggle between edit / preview / split modes
+- [x] Create `editorStore` — content, dirty state
+- [x] Syntax highlighting in editor
+- [x] Autosave with debounce (1.5s)
+- [x] `useAutosave` hook
+- [x] Tab support (multiple open files)
+- [x] `EditorTabs` component
+- [x] Unsaved changes indicator (dot on tab)
 
 ### 🏁 Sprint 4 — Backup System
 **Goal:** Manual backup creation and restore
 
-- [ ] Create `models/backup.rs` — BackupInfo struct
-- [ ] Create `services/backup_service.rs`
-- [ ] Implement `create_backup` — timestamped copy of vault
-- [ ] Implement `list_backups` — enumerate backup history
-- [ ] Implement `restore_backup` — replace vault from snapshot
-- [ ] Implement `delete_backup` — cleanup old backups
-- [ ] Create `commands/backup_commands.rs`
-- [ ] Create `BackupPanel` component in sidebar
-- [ ] Create `backupStore` (Zustand)
-- [ ] Wire `tauriBackupService.ts`
-- [ ] Show backup history with timestamps
-- [ ] Confirm before restore (destructive action)
+- [x] Create `models/backup.rs` — BackupInfo struct
+- [x] Create `services/backup_service.rs`
+- [x] Implement `create_backup` — timestamped copy of vault
+- [x] Implement `list_backups` — enumerate backup history
+- [x] Implement `restore_backup` — replace vault from snapshot
+- [x] Implement `delete_backup` — cleanup old backups
+- [x] Create `commands/backup_commands.rs`
+- [x] Create `BackupPanel` component in sidebar
+- [x] Create `backupStore` (Zustand)
+- [x] Wire `tauriBackupService.ts`
+- [x] Show backup history with timestamps
+- [x] Confirm before restore (destructive action)
 
 ### 🏁 Sprint 5 — AI Service Stubs & Interfaces
 **Goal:** AI integration points defined and stubbed
 
-- [ ] Create `models/ai.rs` — SummaryRequest, EmbeddingResult, etc.
-- [ ] Create `services/ai_service.rs` — trait-based design
-- [ ] Define `AiProvider` trait (summarize, embed, search, tag)
-- [ ] Create `StubAiProvider` — returns placeholder responses
-- [ ] Create `commands/ai_commands.rs`
-- [ ] Create frontend `types/ai.ts`
-- [ ] Create `tauriAiService.ts`
+- [x] Create `models/ai.rs` — SummaryRequest, EmbeddingResult, etc.
+- [x] Create `services/ai_service.rs` — trait-based design
+- [x] Define `AiProvider` trait (summarize, embed, search, tag)
+- [x] Create `StubAiProvider` — returns placeholder responses
+- [x] Create `commands/ai_commands.rs`
+- [x] Create frontend `types/ai.ts`
+- [x] Create `tauriAiService.ts`
 - [ ] Add "Summarize" button in editor toolbar (calls stub)
 - [ ] Add "AI Search" placeholder in sidebar
 
 ### 🏁 Sprint 6 — TypeSpec API Contracts
 **Goal:** Formal API definitions for all services
 
-- [ ] Install TypeSpec tooling
-- [ ] Define `File` model in TypeSpec
-- [ ] Define `Backup` model in TypeSpec
-- [ ] Define `AiRequest/AiResponse` models
-- [ ] Define `/files` routes
-- [ ] Define `/directories` routes
-- [ ] Define `/backups` routes
-- [ ] Define `/ai` routes
+- [x] Install TypeSpec tooling
+- [x] Define `File` model in TypeSpec
+- [x] Define `Backup` model in TypeSpec
+- [x] Define `AiRequest/AiResponse` models
+- [x] Define `/files` routes
+- [x] Define `/directories` routes
+- [x] Define `/backups` routes
+- [x] Define `/ai` routes
 - [ ] Generate OpenAPI output for documentation
 
 ### 🏁 Sprint 7 — UX Polish & Keyboard Shortcuts
 **Goal:** Professional feel, power-user ready
 
 - [ ] Global keyboard shortcuts (Cmd+S, Cmd+N, Cmd+P, etc.)
-- [ ] Command palette (Cmd+Shift+P)
-- [ ] Search files (Cmd+P quick open)
-- [ ] Status bar with file info (word count, line count)
-- [ ] Responsive sidebar (collapsible)
-- [ ] Dark/light theme support
-- [ ] Loading states and error toasts
-- [ ] Empty state screens
+- [x] Command palette (Cmd+Shift+P)
+- [x] Search files (Cmd+P quick open)
+- [x] Status bar with file info (word count, line count)
+- [x] Responsive sidebar (collapsible)
+- [x] Dark/light theme support
+- [x] Loading states and error toasts
+- [x] Empty state screens
 
 ### 🏁 Sprint 8 — Testing & Quality
 **Goal:** Confidence in stability
