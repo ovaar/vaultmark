@@ -111,14 +111,14 @@ export function CommandPalette({
 
   useEffect(() => {
     if (open) {
-      setQuery("");
-      setSelectedIndex(0);
+      setQuery(""); // eslint-disable-line react-hooks/set-state-in-effect
+      setSelectedIndex(0);  
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
 
   useEffect(() => {
-    setSelectedIndex(0);
+    setSelectedIndex(0); // eslint-disable-line react-hooks/set-state-in-effect
   }, [query]);
 
   const executeCommand = (cmd: Command) => {

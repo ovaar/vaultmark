@@ -75,3 +75,47 @@ pub fn suggest_tags(content: &str) -> Result<TagResponse, AppError> {
         content: content.to_string(),
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_summarize_includes_word_count() {
+        let resp = summarize("hello world foo bar").unwrap();
+        assert!(resp.summary.contains("4 words"));
+    }
+
+    #[test]
+    fn test_summarize_empty() {
+        let resp = summarize("").unwrap();
+        assert!(resp.summary.contains("0 words"));
+    }
+
+    #[test]
+    fn test_search_returns_stub() {
+        let results = search("test query", "/vault").unwrap();
+        assert_eq!(results.len(), 1);
+        assert!(results[0].snippet.contains("test query"));
+        assert_eq!(results[0].score, 0.0);
+    }
+
+    #[test]
+    fn test_suggest_tags_returns_untagged() {
+        let resp = suggest_tags("some content").unwrap();
+        assert_eq!(resp.tags, vec!["untagged"]);
+    }
+
+    #[test]
+    fn test_stub_embed() {
+        let provider = StubAiProvider;
+        let resp = provider
+            .embed(&EmbedRequest {
+                content: "test".into(),
+                document_path: Some("doc.md".into()),
+            })
+            .unwrap();
+        assert_eq!(resp.embedding.len(), 384);
+        assert_eq!(resp.document_path, Some("doc.md".into()));
+    }
+}

@@ -158,3 +158,121 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), AppError> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    fn setup_vault() -> TempDir {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("note.md"), "# Note").unwrap();
+        fs::create_dir(dir.path().join("folder")).unwrap();
+        fs::write(dir.path().join("folder/child.md"), "child").unwrap();
+        dir
+    }
+
+    #[test]
+    fn test_backups_dir_location() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let dir = backups_dir(root);
+        let vault_name = vault.path().file_name().unwrap().to_string_lossy();
+        assert!(dir.to_string_lossy().contains(&format!(".{}-backups", vault_name)));
+        assert_eq!(dir.parent().unwrap(), vault.path().parent().unwrap());
+    }
+
+    #[test]
+    fn test_create_backup() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let info = create_backup(root).unwrap();
+        assert!(info.id.starts_with("backup_"));
+        assert!(info.size_bytes > 0);
+        assert!(Path::new(&info.backup_path).exists());
+        // Verify backup content
+        let backup_path = Path::new(&info.backup_path);
+        assert!(backup_path.join("note.md").exists());
+        assert!(backup_path.join("folder/child.md").exists());
+    }
+
+    #[test]
+    fn test_create_backup_nonexistent_vault() {
+        let result = create_backup("/tmp/nonexistent_vault_xyz_123");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_list_backups_empty() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let backups = list_backups(root).unwrap();
+        assert!(backups.is_empty());
+    }
+
+    #[test]
+    fn test_list_backups_after_create() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        create_backup(root).unwrap();
+        let backups = list_backups(root).unwrap();
+        assert_eq!(backups.len(), 1);
+        assert!(backups[0].id.starts_with("backup_"));
+    }
+
+    #[test]
+    fn test_restore_backup() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+
+        let info = create_backup(root).unwrap();
+
+        // Modify vault after backup
+        fs::write(vault.path().join("note.md"), "modified").unwrap();
+        fs::write(vault.path().join("extra.md"), "extra").unwrap();
+
+        // Restore should bring back original content
+        restore_backup(root, &info.id).unwrap();
+        let content = fs::read_to_string(vault.path().join("note.md")).unwrap();
+        assert_eq!(content, "# Note");
+        // Extra file should be removed by restore
+        assert!(!vault.path().join("extra.md").exists());
+    }
+
+    #[test]
+    fn test_restore_nonexistent_backup() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let result = restore_backup(root, "backup_nonexistent");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_delete_backup() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let info = create_backup(root).unwrap();
+        assert!(Path::new(&info.backup_path).exists());
+        delete_backup(root, &info.id).unwrap();
+        assert!(!Path::new(&info.backup_path).exists());
+    }
+
+    #[test]
+    fn test_delete_nonexistent_backup() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let result = delete_backup(root, "backup_nope");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_copy_dir_recursive_skips_hidden() {
+        let src = TempDir::new().unwrap();
+        let dst = TempDir::new().unwrap();
+        fs::write(src.path().join("visible.md"), "v").unwrap();
+        fs::write(src.path().join(".hidden"), "h").unwrap();
+        copy_dir_recursive(src.path(), &dst.path().join("out")).unwrap();
+        assert!(dst.path().join("out/visible.md").exists());
+        assert!(!dst.path().join("out/.hidden").exists());
+    }
+}

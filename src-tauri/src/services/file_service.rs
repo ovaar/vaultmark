@@ -56,9 +56,9 @@ pub fn list_files(vault_root: &str, relative_path: &str) -> Result<Vec<FileEntry
         let modified = metadata
             .modified()
             .ok()
-            .and_then(|t| {
+            .map(|t| {
                 let datetime: chrono::DateTime<chrono::Utc> = t.into();
-                Some(datetime.to_rfc3339())
+                datetime.to_rfc3339()
             });
 
         let extension = Path::new(&name)
@@ -115,9 +115,9 @@ pub fn get_file_tree(vault_root: &str) -> Result<Vec<FileEntry>, AppError> {
                 .to_string_lossy()
                 .to_string();
 
-            let modified = metadata.modified().ok().and_then(|t| {
+            let modified = metadata.modified().ok().map(|t| {
                 let datetime: chrono::DateTime<chrono::Utc> = t.into();
-                Some(datetime.to_rfc3339())
+                datetime.to_rfc3339()
             });
 
             let extension = Path::new(&name)
@@ -182,9 +182,9 @@ pub fn read_file(vault_root: &str, relative_path: &str) -> Result<FileContent, A
         .to_string_lossy()
         .to_string();
 
-    let modified = metadata.modified().ok().and_then(|t| {
+    let modified = metadata.modified().ok().map(|t| {
         let datetime: chrono::DateTime<chrono::Utc> = t.into();
-        Some(datetime.to_rfc3339())
+        datetime.to_rfc3339()
     });
 
     Ok(FileContent {
@@ -277,4 +277,245 @@ fn pathdiff_relative(root: &str, path: &Path) -> String {
         .unwrap_or(path)
         .to_string_lossy()
         .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    fn setup_vault() -> TempDir {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("hello.md"), "# Hello").unwrap();
+        fs::write(dir.path().join("world.md"), "# World").unwrap();
+        fs::create_dir(dir.path().join("subdir")).unwrap();
+        fs::write(dir.path().join("subdir/nested.md"), "nested").unwrap();
+        fs::write(dir.path().join(".hidden"), "secret").unwrap();
+        dir
+    }
+
+    #[test]
+    fn test_validate_path_valid() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let result = validate_path("hello.md", root);
+        assert!(result.is_ok());
+        assert!(result.unwrap().ends_with("hello.md"));
+    }
+
+    #[test]
+    fn test_validate_path_traversal_blocked() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        // Parent traversal is blocked — either OutOfScope or Io error
+        let result = validate_path("../../../etc/passwd", root);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_path_traversal_sibling() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        // A simple ".." goes to the parent of the vault, which exists
+        // but resolves outside the vault root → OutOfScope
+        let result = validate_path("../something", root);
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            AppError::OutOfScope(_) => {}
+            e => panic!("Expected OutOfScope, got: {:?}", e),
+        }
+    }
+
+    #[test]
+    fn test_validate_path_new_file() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let result = validate_path("newfile.md", root);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_list_files_root() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let entries = list_files(root, "").unwrap();
+        let names: Vec<&str> = entries.iter().map(|e| e.name.as_str()).collect();
+        assert!(names.contains(&"subdir"));
+        assert!(names.contains(&"hello.md"));
+        assert!(names.contains(&"world.md"));
+        assert!(!names.contains(&".hidden"), "hidden files should be excluded");
+    }
+
+    #[test]
+    fn test_list_files_dirs_first() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let entries = list_files(root, "").unwrap();
+        assert!(entries[0].is_dir, "directories should be sorted first");
+    }
+
+    #[test]
+    fn test_list_files_subdir() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let entries = list_files(root, "subdir").unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].name, "nested.md");
+    }
+
+    #[test]
+    fn test_list_files_nonexistent() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let result = list_files(root, "nope");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_get_file_tree() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let tree = get_file_tree(root).unwrap();
+        let names: Vec<&str> = tree.iter().map(|e| e.name.as_str()).collect();
+        assert!(names.contains(&"subdir"));
+        assert!(names.contains(&"hello.md"));
+        assert!(!names.contains(&".hidden"));
+
+        let subdir = tree.iter().find(|e| e.name == "subdir").unwrap();
+        assert!(subdir.children.is_some());
+        assert_eq!(subdir.children.as_ref().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn test_read_file_success() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let fc = read_file(root, "hello.md").unwrap();
+        assert_eq!(fc.content, "# Hello");
+        assert_eq!(fc.name, "hello.md");
+        assert_eq!(fc.path, "hello.md");
+    }
+
+    #[test]
+    fn test_read_file_not_found() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let result = read_file(root, "missing.md");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_read_directory_as_file() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        let result = read_file(root, "subdir");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_write_file_new() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        write_file(root, "new.md", "new content").unwrap();
+        let fc = read_file(root, "new.md").unwrap();
+        assert_eq!(fc.content, "new content");
+    }
+
+    #[test]
+    fn test_write_file_overwrite() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        write_file(root, "hello.md", "updated").unwrap();
+        let fc = read_file(root, "hello.md").unwrap();
+        assert_eq!(fc.content, "updated");
+    }
+
+    #[test]
+    fn test_write_file_creates_parent_dirs() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        // validate_path requires the immediate parent to exist, so create it first
+        create_directory(root, "a").unwrap();
+        write_file(root, "a/deep.md", "deep").unwrap();
+        let fc = read_file(root, "a/deep.md").unwrap();
+        assert_eq!(fc.content, "deep");
+    }
+
+    #[test]
+    fn test_write_file_no_temp_leftover() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        write_file(root, "atomic.md", "data").unwrap();
+        assert!(!vault.path().join("atomic.tmp").exists(), "temp file should be cleaned up");
+    }
+
+    #[test]
+    fn test_delete_file() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        delete_file(root, "hello.md").unwrap();
+        assert!(read_file(root, "hello.md").is_err());
+    }
+
+    #[test]
+    fn test_delete_directory() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        delete_file(root, "subdir").unwrap();
+        assert!(!vault.path().join("subdir").exists());
+    }
+
+    #[test]
+    fn test_delete_nonexistent() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        assert!(delete_file(root, "nope.md").is_err());
+    }
+
+    #[test]
+    fn test_rename_file() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        rename_file(root, "hello.md", "renamed.md").unwrap();
+        assert!(read_file(root, "renamed.md").is_ok());
+        assert!(read_file(root, "hello.md").is_err());
+    }
+
+    #[test]
+    fn test_rename_nonexistent() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        assert!(rename_file(root, "nope.md", "newname.md").is_err());
+    }
+
+    #[test]
+    fn test_create_directory() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        create_directory(root, "newdir").unwrap();
+        assert!(vault.path().join("newdir").is_dir());
+    }
+
+    #[test]
+    fn test_create_nested_directory() {
+        let vault = setup_vault();
+        let root = vault.path().to_str().unwrap();
+        // validate_path resolves parent, so create one level at a time
+        create_directory(root, "a").unwrap();
+        create_directory(root, "a/b").unwrap();
+        assert!(vault.path().join("a/b").is_dir());
+    }
+
+    #[test]
+    fn test_dir_size() {
+        let vault = setup_vault();
+        let size = dir_size(vault.path());
+        assert!(size > 0);
+    }
+
+    #[test]
+    fn test_pathdiff_relative() {
+        let result = pathdiff_relative("/vault", Path::new("/vault/notes/hello.md"));
+        assert_eq!(result, "notes/hello.md");
+    }
 }

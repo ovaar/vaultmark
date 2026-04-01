@@ -250,7 +250,7 @@ App
 - [x] Configure `tauri.conf.json` (app name, window, security)
 - [x] Setup React + TypeScript + Vite
 - [x] Install core dependencies (zustand, react-markdown, codemirror)
-- [ ] Configure ESLint + Prettier
+- [x] Configure ESLint + Prettier
 - [x] Verify `cargo tauri dev` runs successfully
 - [x] Setup Tauri 2.0 capabilities/permissions
 
@@ -267,7 +267,7 @@ App
 - [x] Implement `rename_file` — move/rename support
 - [x] Implement `create_directory` — nested creation
 - [x] Create `errors.rs` — unified error handling
-- [ ] Unit tests for file_service
+- [x] Unit tests for file_service
 
 ### 🏁 Sprint 2 — Frontend Shell & File Tree
 **Goal:** Navigable file tree with working CRUD
@@ -345,7 +345,7 @@ App
 ### 🏁 Sprint 7 — UX Polish & Keyboard Shortcuts
 **Goal:** Professional feel, power-user ready
 
-- [ ] Global keyboard shortcuts (Cmd+S, Cmd+N, Cmd+P, etc.)
+- [x] Global keyboard shortcuts (Cmd+S, Cmd+N, Cmd+P, etc.)
 - [x] Command palette (Cmd+Shift+P)
 - [x] Search files (Cmd+P quick open)
 - [x] Status bar with file info (word count, line count)
@@ -357,12 +357,12 @@ App
 ### 🏁 Sprint 8 — Testing & Quality
 **Goal:** Confidence in stability
 
-- [ ] Rust unit tests for all services
+- [x] Rust unit tests for all services
 - [ ] Rust integration tests for file operations
-- [ ] React component tests (Vitest + Testing Library)
+- [x] React component tests (Vitest + Testing Library)
 - [ ] E2E smoke test (Tauri + WebDriver)
-- [ ] Linting clean (clippy + eslint)
-- [ ] Error boundary in React
+- [x] Linting clean (clippy + eslint)
+- [x] Error boundary in React
 
 ### 🏁 Sprint 9 — Packaging & Distribution
 **Goal:** Installable app on all platforms

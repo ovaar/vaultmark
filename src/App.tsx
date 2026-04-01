@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { AppLayout } from "./components/layout/AppLayout";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useFileStore } from "./stores/fileStore";
 import { homeDir } from "@tauri-apps/api/path";
 import "./styles/globals.css";
@@ -19,7 +20,11 @@ function App() {
     }
   }, [vaultRoot, setVaultRoot]);
 
-  return <AppLayout />;
+  return (
+    <ErrorBoundary>
+      <AppLayout />
+    </ErrorBoundary>
+  );
 }
 
 export default App;
