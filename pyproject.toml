@@ -1,0 +1,9 @@
+[project]
+name = "vaultmark"
+version = "0.1.0"
+description = "A cross-platform desktop app for managing notes, built with Tauri 2.0 and React"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "ovaar" }]
+requires-python = ">=3.14"
+dependencies = []
