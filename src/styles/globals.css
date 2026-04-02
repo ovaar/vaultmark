@@ -147,8 +147,20 @@ input:focus {
   border-radius: 4px;
 }
 
+.file-tree-item.drag-invalid {
+  background: color-mix(in srgb, var(--danger) 25%, transparent);
+  outline: 1px dashed var(--danger);
+  border-radius: 4px;
+  cursor: not-allowed;
+}
+
 .file-tree.root-drag-over {
   outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+}
+
+.file-tree.root-drag-invalid {
+  outline: 2px dashed var(--danger);
   outline-offset: -2px;
 }
 

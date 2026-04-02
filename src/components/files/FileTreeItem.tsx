@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import type { FileEntry } from "../../types/file";
 import { useFileStore } from "../../stores/fileStore";
 import { useEditorStore } from "../../stores/editorStore";
+import { getDragPath, setDragPath } from "./dragState";
 
 interface FileTreeItemProps {
   entry: FileEntry;
@@ -17,6 +18,7 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
   const [renaming, setRenaming] = useState(false);
   const [newName, setNewName] = useState(entry.name);
   const [dragOver, setDragOver] = useState(false);
+  const [dragInvalid, setDragInvalid] = useState(false);
   const dragCounter = useRef(0);
 
   const selectedFile = useFileStore((s) => s.selectedFile);
@@ -75,33 +77,59 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
     }
   };
 
+  const isValidDrop = (fromPath: string): boolean => {
+    if (!entry.is_dir) return false;
+    if (!fromPath || fromPath === entry.path) return false;
+    // Don't drop a folder into its own descendant (circular)
+    if (entry.path.startsWith(fromPath + "/")) return false;
+    // Don't drop into same parent (no-op)
+    const parentOfSource = fromPath.includes("/")
+      ? fromPath.substring(0, fromPath.lastIndexOf("/"))
+      : "";
+    if (parentOfSource === entry.path) return false;
+    return true;
+  };
+
   const handleDragStart = (e: React.DragEvent) => {
     e.stopPropagation();
     e.dataTransfer.setData("text/plain", entry.path);
     e.dataTransfer.effectAllowed = "move";
+    setDragPath(entry.path);
+  };
+
+  const handleDragEnd = () => {
+    setDragPath(null);
   };
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!entry.is_dir) return;
     dragCounter.current++;
-    setDragOver(true);
+    const fromPath = getDragPath();
+    if (fromPath && isValidDrop(fromPath)) {
+      setDragOver(true);
+    } else {
+      setDragInvalid(true);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
-    if (!entry.is_dir) return;
     e.preventDefault();
     e.stopPropagation();
-    e.dataTransfer.dropEffect = "move";
+    const fromPath = getDragPath();
+    if (fromPath && isValidDrop(fromPath)) {
+      e.dataTransfer.dropEffect = "move";
+    } else {
+      e.dataTransfer.dropEffect = "none";
+    }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.stopPropagation();
-    if (!entry.is_dir) return;
     dragCounter.current--;
     if (dragCounter.current === 0) {
       setDragOver(false);
+      setDragInvalid(false);
     }
   };
 
@@ -110,16 +138,10 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
     e.stopPropagation();
     dragCounter.current = 0;
     setDragOver(false);
+    setDragInvalid(false);
     if (!entry.is_dir) return;
     const fromPath = e.dataTransfer.getData("text/plain");
-    if (!fromPath || fromPath === entry.path) return;
-    // Don't drop into self or descendant
-    if (fromPath.startsWith(entry.path + "/")) return;
-    // Don't drop into same parent (no-op)
-    const parentOfSource = fromPath.includes("/")
-      ? fromPath.substring(0, fromPath.lastIndexOf("/"))
-      : "";
-    if (parentOfSource === entry.path) return;
+    if (!fromPath || !isValidDrop(fromPath)) return;
     try {
       await moveEntry(fromPath, entry.path);
       setExpanded(true);
@@ -130,18 +152,19 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
 
   return (
     <div
-      onDragEnter={entry.is_dir ? handleDragEnter : undefined}
-      onDragOver={entry.is_dir ? handleDragOver : undefined}
-      onDragLeave={entry.is_dir ? handleDragLeave : undefined}
-      onDrop={entry.is_dir ? handleDrop : undefined}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       <div
-        className={`file-tree-item ${isSelected ? "selected" : ""}${dragOver ? " drag-over" : ""}`}
+        className={`file-tree-item ${isSelected ? "selected" : ""}${dragOver ? " drag-over" : ""}${dragInvalid ? " drag-invalid" : ""}`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
         draggable={!renaming}
         onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
         role="treeitem"
         aria-selected={isSelected}
         aria-expanded={entry.is_dir ? expanded : undefined}

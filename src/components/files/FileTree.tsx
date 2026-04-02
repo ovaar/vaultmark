@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useFileStore } from "../../stores/fileStore";
 import { FileTreeItem } from "./FileTreeItem";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { getDragPath } from "./dragState";
 
 export function FileTree() {
   const fileTree = useFileStore((s) => s.fileTree);
@@ -18,6 +19,7 @@ export function FileTree() {
   );
   const [newName, setNewName] = useState("");
   const [rootDragOver, setRootDragOver] = useState(false);
+  const [rootDragInvalid, setRootDragInvalid] = useState(false);
   const rootDragCounter = useRef(0);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
@@ -59,21 +61,38 @@ export function FileTree() {
     }
   };
 
+  const isValidRootDrop = (fromPath: string): boolean => {
+    // Already at root level — no-op
+    if (!fromPath.includes("/")) return false;
+    return true;
+  };
+
   const handleRootDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     rootDragCounter.current++;
-    setRootDragOver(true);
+    const fromPath = getDragPath();
+    if (fromPath && isValidRootDrop(fromPath)) {
+      setRootDragOver(true);
+    } else {
+      setRootDragInvalid(true);
+    }
   };
 
   const handleRootDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
+    const fromPath = getDragPath();
+    if (fromPath && isValidRootDrop(fromPath)) {
+      e.dataTransfer.dropEffect = "move";
+    } else {
+      e.dataTransfer.dropEffect = "none";
+    }
   };
 
   const handleRootDragLeave = () => {
     rootDragCounter.current--;
     if (rootDragCounter.current === 0) {
       setRootDragOver(false);
+      setRootDragInvalid(false);
     }
   };
 
@@ -81,10 +100,10 @@ export function FileTree() {
     e.preventDefault();
     rootDragCounter.current = 0;
     setRootDragOver(false);
+    setRootDragInvalid(false);
     const fromPath = e.dataTransfer.getData("text/plain");
     if (!fromPath) return;
-    // Only move if the item is inside a subdirectory (not already at root)
-    if (!fromPath.includes("/")) return;
+    if (!isValidRootDrop(fromPath)) return;
     try {
       await moveEntry(fromPath, "");
     } catch {
@@ -102,7 +121,7 @@ export function FileTree() {
 
   return (
     <div
-      className={`file-tree${rootDragOver ? " root-drag-over" : ""}`}
+      className={`file-tree${rootDragOver ? " root-drag-over" : ""}${rootDragInvalid ? " root-drag-invalid" : ""}`}
       role="tree"
       aria-label="File explorer"
       onDragEnter={handleRootDragEnter}
