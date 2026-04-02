@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { FileEntry } from "../../types/file";
 import { useFileStore } from "../../stores/fileStore";
 import { useEditorStore } from "../../stores/editorStore";
@@ -17,6 +17,7 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
   const [renaming, setRenaming] = useState(false);
   const [newName, setNewName] = useState(entry.name);
   const [dragOver, setDragOver] = useState(false);
+  const dragCounter = useRef(0);
 
   const selectedFile = useFileStore((s) => s.selectedFile);
   const selectFile = useFileStore((s) => s.selectFile);
@@ -75,39 +76,65 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
   };
 
   const handleDragStart = (e: React.DragEvent) => {
+    e.stopPropagation();
     e.dataTransfer.setData("text/plain", entry.path);
     e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!entry.is_dir) return;
+    dragCounter.current++;
+    setDragOver(true);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     if (!entry.is_dir) return;
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = "move";
-    setDragOver(true);
   };
 
-  const handleDragLeave = () => {
-    setDragOver(false);
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.stopPropagation();
+    if (!entry.is_dir) return;
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setDragOver(false);
+    }
   };
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current = 0;
     setDragOver(false);
     if (!entry.is_dir) return;
     const fromPath = e.dataTransfer.getData("text/plain");
     if (!fromPath || fromPath === entry.path) return;
-    // Don't drop into own parent (no-op) or into self
+    // Don't drop into self or descendant
     if (fromPath.startsWith(entry.path + "/")) return;
+    // Don't drop into same parent (no-op)
     const parentOfSource = fromPath.includes("/")
       ? fromPath.substring(0, fromPath.lastIndexOf("/"))
       : "";
     if (parentOfSource === entry.path) return;
-    await moveEntry(fromPath, entry.path);
-    setExpanded(true);
+    try {
+      await moveEntry(fromPath, entry.path);
+      setExpanded(true);
+    } catch {
+      // Error handled by store
+    }
   };
 
   return (
-    <div>
+    <div
+      onDragEnter={entry.is_dir ? handleDragEnter : undefined}
+      onDragOver={entry.is_dir ? handleDragOver : undefined}
+      onDragLeave={entry.is_dir ? handleDragLeave : undefined}
+      onDrop={entry.is_dir ? handleDrop : undefined}
+    >
       <div
         className={`file-tree-item ${isSelected ? "selected" : ""}${dragOver ? " drag-over" : ""}`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
@@ -115,9 +142,6 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
         onContextMenu={handleContextMenu}
         draggable={!renaming}
         onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
         role="treeitem"
         aria-selected={isSelected}
         aria-expanded={entry.is_dir ? expanded : undefined}

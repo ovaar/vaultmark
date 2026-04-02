@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFileStore } from "../../stores/fileStore";
 import { FileTreeItem } from "./FileTreeItem";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
@@ -11,11 +11,14 @@ export function FileTree() {
   const createFile = useFileStore((s) => s.createFile);
   const createFolder = useFileStore((s) => s.createFolder);
   const importFile = useFileStore((s) => s.importFile);
+  const moveEntry = useFileStore((s) => s.moveEntry);
 
   const [showNewInput, setShowNewInput] = useState<"file" | "folder" | null>(
     null
   );
   const [newName, setNewName] = useState("");
+  const [rootDragOver, setRootDragOver] = useState(false);
+  const rootDragCounter = useRef(0);
 
   useEffect(() => {
     if (vaultRoot) {
@@ -55,8 +58,49 @@ export function FileTree() {
     }
   };
 
+  const handleRootDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    rootDragCounter.current++;
+    setRootDragOver(true);
+  };
+
+  const handleRootDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleRootDragLeave = () => {
+    rootDragCounter.current--;
+    if (rootDragCounter.current === 0) {
+      setRootDragOver(false);
+    }
+  };
+
+  const handleRootDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    rootDragCounter.current = 0;
+    setRootDragOver(false);
+    const fromPath = e.dataTransfer.getData("text/plain");
+    if (!fromPath) return;
+    // Only move if the item is inside a subdirectory (not already at root)
+    if (!fromPath.includes("/")) return;
+    try {
+      await moveEntry(fromPath, "");
+    } catch {
+      // Error handled by store
+    }
+  };
+
   return (
-    <div className="file-tree" role="tree" aria-label="File explorer">
+    <div
+      className={`file-tree${rootDragOver ? " root-drag-over" : ""}`}
+      role="tree"
+      aria-label="File explorer"
+      onDragEnter={handleRootDragEnter}
+      onDragOver={handleRootDragOver}
+      onDragLeave={handleRootDragLeave}
+      onDrop={handleRootDrop}
+    >
       <div className="file-tree-header">
         <span className="file-tree-title" id="file-tree-title">Files</span>
         <div className="file-tree-actions">

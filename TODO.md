@@ -420,8 +420,8 @@ App
 - [x] When creating a new vault, the `~` is not converted to a canonical path, therefore creating the vault in `src-tauri/~/VaultMark`
 - [x] Items in the Files navigation treeview are still not draggable
 - [x] The opened file tab name text should not be selectable
-- [ ] Iterate on the html 5 drag and drop feature to make it feature complete
-- [ ] When dragging files onto a folder they don't move to the destination folder.
+- [x] Iterate on the html 5 drag and drop feature to make it feature complete
+- [x] When dragging files onto a folder they don't move to the destination folder.
 
 ### 🏁 Sprint 12 — Usability
 **Goal:** Improve UX
