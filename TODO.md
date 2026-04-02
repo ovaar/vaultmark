@@ -414,7 +414,22 @@ App
   - Add ARIA roles where needed
   - Ensure keyboard navigation support
 
-### Sprint 11 - Integration with reMarkable e-Paper tablet
+### 🏁 Sprint 11 — Bug Fixes
+**Goal:** Fix bugs
+
+- [ ] When creating a new vault, the `~` is not converted to a canonical path, therefore creating the vault in `src-tauri/~/VaultMark`
+- [ ] Items in the Files navigation treeview are still not draggable
+- [ ] The opened file tab name text should not be selectable
+
+### 🏁 Sprint 12 — Usability
+**Goal:** Improve UX
+
+- [ ] Allow to drag and drop files from and to folders in the Files navigation tree view.
+- [ ] Right click the empty space of the Files nav should show a context menu with the same options as in the toolbar (create file, create folder, import)
+- [ ] Allow opening multiple files next to eachother like vscode, where you drag a file to a corner that it snaps to that segment.
+
+
+### Sprint 13 - Integration with reMarkable e-Paper tablet
 **Goal:** Connect with reMarkable 1, 2 or Pro
 
 - read: 
@@ -460,7 +475,6 @@ App
   - Show sync status (idle, syncing, error)
   - Provide logs for debugging
   - Handle offline scenarios gracefully
-
 
 ---
 
