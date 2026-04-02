@@ -141,6 +141,12 @@ input:focus {
   color: var(--accent);
 }
 
+.file-tree-item.drag-over {
+  background: var(--accent);
+  color: var(--bg-primary);
+  border-radius: 4px;
+}
+
 .file-tree-icon {
   font-size: 14px;
   flex-shrink: 0;
@@ -277,6 +283,7 @@ input:focus {
   cursor: pointer;
   white-space: nowrap;
   border-bottom: 2px solid transparent;
+  user-select: none;
 }
 
 .editor-tab:hover {

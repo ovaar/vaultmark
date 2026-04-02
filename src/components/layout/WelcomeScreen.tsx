@@ -1,9 +1,18 @@
 import { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { homeDir } from "@tauri-apps/api/path";
 
 interface WelcomeScreenProps {
   defaultPath: string;
   onComplete: (path: string) => void;
+}
+
+async function expandTilde(path: string): Promise<string> {
+  if (path.startsWith("~/") || path === "~") {
+    const home = await homeDir();
+    return path.replace("~", home.replace(/\/+$/, ""));
+  }
+  return path;
 }
 
 export function WelcomeScreen({ defaultPath, onComplete }: WelcomeScreenProps) {
@@ -16,7 +25,8 @@ export function WelcomeScreen({ defaultPath, onComplete }: WelcomeScreenProps) {
     setCreating(true);
     setError(null);
     try {
-      onComplete(vaultPath.trim());
+      const resolved = await expandTilde(vaultPath.trim());
+      onComplete(resolved);
     } catch (e) {
       setError(String(e));
       setCreating(false);

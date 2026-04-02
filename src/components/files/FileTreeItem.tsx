@@ -16,6 +16,7 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
   } | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [newName, setNewName] = useState(entry.name);
+  const [dragOver, setDragOver] = useState(false);
 
   const selectedFile = useFileStore((s) => s.selectedFile);
   const selectFile = useFileStore((s) => s.selectFile);
@@ -73,13 +74,50 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
     }
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData("text/plain", entry.path);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!entry.is_dir) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (!entry.is_dir) return;
+    const fromPath = e.dataTransfer.getData("text/plain");
+    if (!fromPath || fromPath === entry.path) return;
+    // Don't drop into own parent (no-op) or into self
+    if (fromPath.startsWith(entry.path + "/")) return;
+    const parentOfSource = fromPath.includes("/")
+      ? fromPath.substring(0, fromPath.lastIndexOf("/"))
+      : "";
+    if (parentOfSource === entry.path) return;
+    await moveEntry(fromPath, entry.path);
+    setExpanded(true);
+  };
+
   return (
     <div>
       <div
-        className={`file-tree-item ${isSelected ? "selected" : ""}`}
+        className={`file-tree-item ${isSelected ? "selected" : ""}${dragOver ? " drag-over" : ""}`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
+        draggable={!renaming}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         role="treeitem"
         aria-selected={isSelected}
         aria-expanded={entry.is_dir ? expanded : undefined}
