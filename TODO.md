@@ -374,6 +374,94 @@ App
 - [x] README with installation instructions
 - [x] CI pipeline (GitHub Actions: build + test + bundle)
 
+### Sprint 10 - Adding new user features
+**Goal:** Develop most wanted user features
+
+- [ ] Open an existing vault using file/directory explorer
+  - Validate selected directory is a valid vault
+  - Show clear error if invalid
+
+- [ ] Allow creating multiple vaults
+  - Allow switching between vaults without restarting
+  - Persist last opened vault
+
+- [ ] Add existing files to my vault
+  - Prompt user to:
+    - Copy file into vault
+    - Move file into vault
+  - Preserve file metadata where possible
+
+- [ ] Allow moving files in the `vaultmark` files explorer
+  - Support drag-and-drop or command-based movement
+  - Prevent accidental overwrite without confirmation
+
+- [ ] Setup automatic backup
+  - Allow users to specify:
+    - Backup location
+    - Backup frequency (manual / scheduled)
+  - Support remote backup locations:
+    - SSH (scp / sftp)
+    - FTP (optional)
+  - Securely store credentials (encrypted)
+
+- [ ] Generate table of contents automatically from `markdown` contents
+  - Parse headings (`#`, `##`, etc.)
+  - Support inline ToC and/or sidebar navigation
+  - Keep ToC updated dynamically
+
+- [ ] Add html accessibility
+  - Use semantic HTML structure
+  - Add ARIA roles where needed
+  - Ensure keyboard navigation support
+
+### Sprint 11 - Integration with reMarkable e-Paper tablet
+**Goal:** Connect with reMarkable 1, 2 or Pro
+
+- read: 
+  - https://remarkable.guide/guide/access/ssh.html#finding-your-device-password-and-ip-addresses
+  - https://github.com/rM-self-serve/webinterface-wifi
+
+- [ ] Allow users to connect to their reMarkable via ssh
+  - Required inputs:
+    - IP address
+    - Username
+    - Password
+  - Test connection before saving
+  - Remember device connection details (securely)
+  - Add toolbar option to connect to recent devices
+  - Purpose: enable 2-way sync with `vaultmark` files
+
+- [ ] Allow users to connect to their reMarkable via USB
+  - Detect device automatically when connected
+  - Provide fallback if SSH is unavailable
+  - Handle platform-specific differences
+
+- [ ] Implement 2-way file synchronization
+  - Sync new, updated, and deleted files
+  - Handle conflicts:
+    - Option: last-write-wins or manual resolution
+  - Allow selective sync (entire vault or specific files/folders)
+
+- [ ] reMarkable does not natively support the `markdown` file format
+  - Implement markdown → reMarkable format conversion
+  - Reference:
+    - https://github.com/ricklupton/rmc
+    - https://www.davisr.me/projects/rcu/
+  - Preserve basic formatting:
+    - Headings
+    - Lists
+    - Text styles
+  - Gracefully degrade unsupported features
+
+- [ ] (Optional) Support reverse conversion
+  - Convert reMarkable documents back to markdown where possible
+
+- [ ] Improve UX and reliability
+  - Show sync status (idle, syncing, error)
+  - Provide logs for debugging
+  - Handle offline scenarios gracefully
+
+
 ---
 
 ## 📊 Priority Matrix
