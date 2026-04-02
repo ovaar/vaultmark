@@ -36,3 +36,18 @@ pub fn rename_file(vault_root: &str, from: &str, to: &str) -> Result<(), AppErro
 pub fn create_directory(vault_root: &str, path: &str) -> Result<(), AppError> {
     file_service::create_directory(vault_root, path)
 }
+
+#[tauri::command]
+pub fn import_file(
+    vault_root: &str,
+    source_path: &str,
+    target_relative: &str,
+    move_file: bool,
+) -> Result<(), AppError> {
+    file_service::import_file(vault_root, source_path, target_relative, move_file)
+}
+
+#[tauri::command]
+pub fn move_entry(vault_root: &str, from_path: &str, to_dir: &str) -> Result<(), AppError> {
+    file_service::move_entry(vault_root, from_path, to_dir)
+}

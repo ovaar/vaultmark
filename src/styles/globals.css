@@ -925,3 +925,96 @@ input:focus {
   cursor: pointer;
   font-size: 0.9rem;
 }
+
+/* ─── Welcome Screen Extras ─── */
+.welcome-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.2rem 0;
+  gap: 0.8rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.welcome-divider::before,
+.welcome-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.welcome-btn-secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.welcome-btn-secondary:hover {
+  background: var(--accent);
+  color: var(--bg-primary);
+}
+
+/* ─── Table of Contents ─── */
+.toc-panel {
+  margin-top: 1rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.toc-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  padding: 0 8px;
+  margin: 0 0 0.4rem;
+}
+
+.toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.toc-item {
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  cursor: default;
+}
+
+.toc-item:hover {
+  background: var(--bg-hover);
+}
+
+.toc-link {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+/* ─── Auto-Backup Setting ─── */
+.backup-auto-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.6rem;
+  padding: 0.3rem 0;
+}
+
+.backup-auto-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.backup-auto-select {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+}

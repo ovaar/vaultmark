@@ -48,3 +48,20 @@ export async function createDirectory(
 ): Promise<void> {
   return invoke("create_directory", { vaultRoot, path });
 }
+
+export async function importFile(
+  vaultRoot: string,
+  sourcePath: string,
+  targetRelative: string,
+  moveFile: boolean
+): Promise<void> {
+  return invoke("import_file", { vaultRoot, sourcePath, targetRelative, moveFile });
+}
+
+export async function moveEntry(
+  vaultRoot: string,
+  fromPath: string,
+  toDir: string
+): Promise<void> {
+  return invoke("move_entry", { vaultRoot, fromPath, toDir });
+}

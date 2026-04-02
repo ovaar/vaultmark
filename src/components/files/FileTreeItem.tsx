@@ -21,6 +21,7 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
   const selectFile = useFileStore((s) => s.selectFile);
   const deleteFile = useFileStore((s) => s.deleteFile);
   const renameFile = useFileStore((s) => s.renameFile);
+  const moveEntry = useFileStore((s) => s.moveEntry);
   const vaultRoot = useFileStore((s) => s.vaultRoot);
   const openFile = useEditorStore((s) => s.openFile);
 
@@ -53,6 +54,14 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
     setNewName(entry.name);
   };
 
+  const handleMove = async () => {
+    setContextMenu(null);
+    const targetDir = prompt("Move to directory (relative path):", "");
+    if (targetDir !== null && targetDir.trim() !== "") {
+      await moveEntry(entry.path, targetDir.trim());
+    }
+  };
+
   const submitRename = async () => {
     setRenaming(false);
     if (newName && newName !== entry.name) {
@@ -71,6 +80,16 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
+        role="treeitem"
+        aria-selected={isSelected}
+        aria-expanded={entry.is_dir ? expanded : undefined}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleClick();
+          }
+        }}
       >
         <span className="file-tree-icon">
           {entry.is_dir ? (expanded ? "📂" : "📁") : "📄"}
@@ -104,6 +123,7 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
             style={{ left: contextMenu.x, top: contextMenu.y }}
           >
             <button onClick={handleRename}>Rename</button>
+            <button onClick={handleMove}>Move to...</button>
             <button onClick={handleDelete} className="danger">
               Delete
             </button>
@@ -112,7 +132,7 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
       )}
 
       {entry.is_dir && expanded && entry.children && (
-        <div className="file-tree-children">
+        <div className="file-tree-children" role="group">
           {entry.children.map((child) => (
             <FileTreeItem
               key={child.path}

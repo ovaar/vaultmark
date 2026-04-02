@@ -16,6 +16,8 @@ interface FileStore {
   createFolder: (path: string) => Promise<void>;
   deleteFile: (path: string) => Promise<void>;
   renameFile: (from: string, to: string) => Promise<void>;
+  importFile: (sourcePath: string, targetRelative: string, move: boolean) => Promise<void>;
+  moveEntry: (fromPath: string, toDir: string) => Promise<void>;
 }
 
 export const useFileStore = create<FileStore>((set, get) => ({
@@ -37,7 +39,7 @@ export const useFileStore = create<FileStore>((set, get) => ({
     try {
       const tree = await fileService.getFileTree(vaultRoot);
       set({ fileTree: tree, loading: false });
-    } catch (e: any) {
+    } catch (e: unknown) {
       set({ error: String(e), loading: false });
     }
   },
@@ -73,6 +75,21 @@ export const useFileStore = create<FileStore>((set, get) => ({
     await fileService.renameFile(vaultRoot, from, to);
     if (selectedFile === from) {
       set({ selectedFile: to });
+    }
+    await loadFileTree();
+  },
+
+  importFile: async (sourcePath: string, targetRelative: string, move: boolean) => {
+    const { vaultRoot, loadFileTree } = get();
+    await fileService.importFile(vaultRoot, sourcePath, targetRelative, move);
+    await loadFileTree();
+  },
+
+  moveEntry: async (fromPath: string, toDir: string) => {
+    const { vaultRoot, loadFileTree, selectedFile } = get();
+    await fileService.moveEntry(vaultRoot, fromPath, toDir);
+    if (selectedFile === fromPath) {
+      set({ selectedFile: null });
     }
     await loadFileTree();
   },

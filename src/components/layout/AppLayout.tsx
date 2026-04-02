@@ -9,10 +9,17 @@ import { QuickOpen } from "./QuickOpen";
 import { ToastContainer } from "./ToastContainer";
 import { useEditorStore } from "../../stores/editorStore";
 import { useAutosave } from "../../hooks/useAutosave";
+import { useAutoBackup } from "../../hooks/useAutoBackup";
 import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 
-export function AppLayout() {
+interface AppLayoutProps {
+  onSwitchVault: (path: string) => void;
+  onOpenWelcome: () => void;
+}
+
+export function AppLayout({ onSwitchVault, onOpenWelcome }: AppLayoutProps) {
   useAutosave(1500);
+  useAutoBackup();
 
   const viewMode = useEditorStore((s) => s.viewMode);
   const setViewMode = useEditorStore((s) => s.setViewMode);
@@ -41,9 +48,9 @@ export function AppLayout() {
   });
 
   return (
-    <div className="app-layout">
+    <div className="app-layout" role="application">
       {sidebarVisible && <Sidebar />}
-      <div className="main-area">
+      <main className="main-area">
         <div className="toolbar">
           <div className="toolbar-left">
             {!sidebarVisible && (
@@ -96,13 +103,15 @@ export function AppLayout() {
           )}
         </div>
         <StatusBar />
-      </div>
+      </main>
 
       <CommandPalette
         open={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
         onToggleSidebar={toggleSidebar}
         onToggleTheme={toggleTheme}
+        onSwitchVault={onSwitchVault}
+        onOpenWelcome={onOpenWelcome}
       />
       <QuickOpen
         open={quickOpenOpen}

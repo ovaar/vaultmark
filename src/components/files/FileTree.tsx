@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useFileStore } from "../../stores/fileStore";
 import { FileTreeItem } from "./FileTreeItem";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
 
 export function FileTree() {
   const fileTree = useFileStore((s) => s.fileTree);
@@ -9,6 +10,7 @@ export function FileTree() {
   const vaultRoot = useFileStore((s) => s.vaultRoot);
   const createFile = useFileStore((s) => s.createFile);
   const createFolder = useFileStore((s) => s.createFolder);
+  const importFile = useFileStore((s) => s.importFile);
 
   const [showNewInput, setShowNewInput] = useState<"file" | "folder" | null>(
     null
@@ -36,10 +38,27 @@ export function FileTree() {
     setShowNewInput(null);
   };
 
+  const handleImportFile = async () => {
+    try {
+      const selected = await openDialog({
+        multiple: true,
+        title: "Import Files",
+      });
+      if (!selected) return;
+      const files = Array.isArray(selected) ? selected : [selected];
+      for (const filePath of files) {
+        const fileName = filePath.split("/").pop() || filePath.split("\\").pop() || "imported";
+        await importFile(filePath, fileName, false);
+      }
+    } catch {
+      // Dialog cancelled or error
+    }
+  };
+
   return (
-    <div className="file-tree">
+    <div className="file-tree" role="tree" aria-label="File explorer">
       <div className="file-tree-header">
-        <span className="file-tree-title">Files</span>
+        <span className="file-tree-title" id="file-tree-title">Files</span>
         <div className="file-tree-actions">
           <button
             className="icon-btn"
@@ -54,6 +73,13 @@ export function FileTree() {
             title="New Folder"
           >
             +📁
+          </button>
+          <button
+            className="icon-btn"
+            onClick={handleImportFile}
+            title="Import File"
+          >
+            📥
           </button>
         </div>
       </div>

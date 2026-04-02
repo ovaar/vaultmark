@@ -377,39 +377,39 @@ App
 ### Sprint 10 - Adding new user features
 **Goal:** Develop most wanted user features
 
-- [ ] Open an existing vault using file/directory explorer
+- [x] Open an existing vault using file/directory explorer
   - Validate selected directory is a valid vault
   - Show clear error if invalid
 
-- [ ] Allow creating multiple vaults
+- [x] Allow creating multiple vaults
   - Allow switching between vaults without restarting
   - Persist last opened vault
 
-- [ ] Add existing files to my vault
+- [x] Add existing files to my vault
   - Prompt user to:
     - Copy file into vault
     - Move file into vault
   - Preserve file metadata where possible
 
-- [ ] Allow moving files in the `vaultmark` files explorer
+- [x] Allow moving files in the `vaultmark` files explorer
   - Support drag-and-drop or command-based movement
   - Prevent accidental overwrite without confirmation
 
-- [ ] Setup automatic backup
+- [x] Setup automatic backup (local)
   - Allow users to specify:
     - Backup location
     - Backup frequency (manual / scheduled)
-  - Support remote backup locations:
+  - [ ] Support remote backup locations (deferred):
     - SSH (scp / sftp)
     - FTP (optional)
-  - Securely store credentials (encrypted)
+  - [ ] Securely store credentials (encrypted) (deferred)
 
-- [ ] Generate table of contents automatically from `markdown` contents
+- [x] Generate table of contents automatically from `markdown` contents
   - Parse headings (`#`, `##`, etc.)
   - Support inline ToC and/or sidebar navigation
   - Keep ToC updated dynamically
 
-- [ ] Add html accessibility
+- [x] Add html accessibility
   - Use semantic HTML structure
   - Add ARIA roles where needed
   - Ensure keyboard navigation support

@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useBackupStore } from "../../stores/backupStore";
+import { useBackupStore, type BackupInterval } from "../../stores/backupStore";
 import { useFileStore } from "../../stores/fileStore";
 
 export function BackupPanel() {
   const [expanded, setExpanded] = useState(false);
   const vaultRoot = useFileStore((s) => s.vaultRoot);
   const loadFileTree = useFileStore((s) => s.loadFileTree);
-  const { backups, loading, createBackup, restoreBackup, deleteBackup, loadBackups } =
+  const { backups, loading, createBackup, restoreBackup, deleteBackup, loadBackups, autoBackupInterval, setAutoBackupInterval } =
     useBackupStore();
 
   const handleExpand = () => {
@@ -38,8 +38,11 @@ export function BackupPanel() {
   };
 
   return (
-    <div className="backup-panel">
-      <div className="backup-header" onClick={handleExpand}>
+    <div className="backup-panel" role="region" aria-label="Backups">
+      <div className="backup-header" onClick={handleExpand} role="button" tabIndex={0}
+        aria-expanded={expanded}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleExpand(); } }}
+      >
         <span>{expanded ? "▼" : "▶"} Backups</span>
       </div>
       {expanded && (
@@ -51,6 +54,24 @@ export function BackupPanel() {
           >
             {loading ? "Creating..." : "Create Backup"}
           </button>
+
+          <div className="backup-auto-setting">
+            <label htmlFor="auto-backup-interval" className="backup-auto-label">
+              Auto-backup
+            </label>
+            <select
+              id="auto-backup-interval"
+              className="backup-auto-select"
+              value={autoBackupInterval}
+              onChange={(e) => setAutoBackupInterval(e.target.value as BackupInterval)}
+            >
+              <option value="off">Off</option>
+              <option value="30min">Every 30 min</option>
+              <option value="1h">Every hour</option>
+              <option value="4h">Every 4 hours</option>
+              <option value="daily">Daily</option>
+            </select>
+          </div>
           {backups.length === 0 ? (
             <p className="backup-empty">No backups yet</p>
           ) : (

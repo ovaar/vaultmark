@@ -11,6 +11,7 @@ use commands::file_commands;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             // File commands
             file_commands::list_files,
@@ -20,6 +21,8 @@ pub fn run() {
             file_commands::delete_file,
             file_commands::rename_file,
             file_commands::create_directory,
+            file_commands::import_file,
+            file_commands::move_entry,
             // Backup commands
             backup_commands::create_backup,
             backup_commands::list_backups,

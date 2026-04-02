@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { open } from "@tauri-apps/plugin-dialog";
 
 interface WelcomeScreenProps {
   defaultPath: string;
@@ -15,11 +16,21 @@ export function WelcomeScreen({ defaultPath, onComplete }: WelcomeScreenProps) {
     setCreating(true);
     setError(null);
     try {
-      // The file_service.get_file_tree creates the vault root if it doesn't exist
       onComplete(vaultPath.trim());
     } catch (e) {
       setError(String(e));
       setCreating(false);
+    }
+  };
+
+  const handleOpenExisting = async () => {
+    try {
+      const selected = await open({ directory: true, title: "Open Vault" });
+      if (selected) {
+        onComplete(selected);
+      }
+    } catch (e) {
+      setError(String(e));
     }
   };
 
@@ -55,6 +66,17 @@ export function WelcomeScreen({ defaultPath, onComplete }: WelcomeScreenProps) {
             disabled={creating || !vaultPath.trim()}
           >
             {creating ? "Creating…" : "Create Vault & Get Started"}
+          </button>
+
+          <div className="welcome-divider">
+            <span>or</span>
+          </div>
+
+          <button
+            className="welcome-btn welcome-btn-secondary"
+            onClick={handleOpenExisting}
+          >
+            Open Existing Vault
           </button>
         </div>
       </div>

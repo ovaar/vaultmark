@@ -259,6 +259,76 @@ pub fn create_directory(vault_root: &str, relative_path: &str) -> Result<(), App
     Ok(())
 }
 
+/// Import an external file into the vault (copy or move).
+pub fn import_file(
+    vault_root: &str,
+    source_path: &str,
+    target_relative: &str,
+    move_file: bool,
+) -> Result<(), AppError> {
+    let src = Path::new(source_path);
+    if !src.exists() {
+        return Err(AppError::NotFound(source_path.to_string()));
+    }
+    if !src.is_file() {
+        return Err(AppError::InvalidPath("Source must be a file".into()));
+    }
+
+    let dest = validate_path(target_relative, vault_root)?;
+
+    // Ensure parent directory exists
+    if let Some(parent) = dest.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    if move_file {
+        // Try rename first (same filesystem), fall back to copy+delete
+        if fs::rename(src, &dest).is_err() {
+            fs::copy(src, &dest)?;
+            fs::remove_file(src)?;
+        }
+    } else {
+        fs::copy(src, &dest)?;
+    }
+
+    Ok(())
+}
+
+/// Move a file/directory within the vault to a new location.
+pub fn move_entry(
+    vault_root: &str,
+    from_path: &str,
+    to_dir: &str,
+) -> Result<(), AppError> {
+    let from = validate_path(from_path, vault_root)?;
+    if !from.exists() {
+        return Err(AppError::NotFound(from_path.to_string()));
+    }
+
+    let to_dir_path = validate_path(to_dir, vault_root)?;
+    if !to_dir_path.is_dir() {
+        return Err(AppError::InvalidPath(format!(
+            "Target is not a directory: {}",
+            to_dir
+        )));
+    }
+
+    let file_name = from
+        .file_name()
+        .ok_or_else(|| AppError::InvalidPath("Cannot determine file name".into()))?;
+    let dest = to_dir_path.join(file_name);
+
+    if dest.exists() {
+        return Err(AppError::InvalidPath(format!(
+            "Target already exists: {}",
+            dest.display()
+        )));
+    }
+
+    fs::rename(&from, &dest)?;
+    Ok(())
+}
+
 /// Calculate size of a directory recursively
 pub fn dir_size(path: &Path) -> u64 {
     WalkDir::new(path)

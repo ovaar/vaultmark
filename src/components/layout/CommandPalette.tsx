@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { useFileStore } from "../../stores/fileStore";
 import { useEditorStore } from "../../stores/editorStore";
 import { useBackupStore } from "../../stores/backupStore";
+import { useVaultStore } from "../../stores/vaultStore";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { generateTocMarkdown } from "../editor/TableOfContents";
 
 interface Command {
   id: string;
@@ -15,6 +18,8 @@ interface CommandPaletteProps {
   onClose: () => void;
   onToggleSidebar: () => void;
   onToggleTheme: () => void;
+  onSwitchVault: (path: string) => void;
+  onOpenWelcome: () => void;
 }
 
 export function CommandPalette({
@@ -22,6 +27,8 @@ export function CommandPalette({
   onClose,
   onToggleSidebar,
   onToggleTheme,
+  onSwitchVault,
+  onOpenWelcome,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -34,7 +41,10 @@ export function CommandPalette({
   const saveFile = useEditorStore((s) => s.saveFile);
   const closeFile = useEditorStore((s) => s.closeFile);
   const setViewMode = useEditorStore((s) => s.setViewMode);
+  const updateContent = useEditorStore((s) => s.updateContent);
+  const openFiles = useEditorStore((s) => s.openFiles);
   const createBackup = useBackupStore((s) => s.createBackup);
+  const recentVaults = useVaultStore((s) => s.recentVaults);
 
   const commands: Command[] = [
     {
@@ -101,6 +111,40 @@ export function CommandPalette({
       label: "Create Backup",
       action: () => createBackup(vaultRoot),
     },
+    {
+      id: "insert-toc",
+      label: "Insert Table of Contents",
+      action: () => {
+        if (!activeFile) return;
+        const file = openFiles.find((f) => f.path === activeFile);
+        if (!file) return;
+        const toc = generateTocMarkdown(file.content);
+        if (toc) {
+          updateContent(activeFile, `## Table of Contents\n\n${toc}\n\n${file.content}`);
+        }
+      },
+    },
+    {
+      id: "open-vault",
+      label: "Open Vault...",
+      action: async () => {
+        const selected = await openDialog({ directory: true, title: "Open Vault" });
+        if (selected) onSwitchVault(selected);
+      },
+    },
+    {
+      id: "new-vault",
+      label: "Create New Vault...",
+      action: () => onOpenWelcome(),
+    },
+    ...recentVaults
+      .filter((v) => v.path !== vaultRoot)
+      .slice(0, 5)
+      .map((v) => ({
+        id: `switch-vault-${v.path}`,
+        label: `Switch to: ${v.name}`,
+        action: () => onSwitchVault(v.path),
+      })),
   ];
 
   const filtered = query
