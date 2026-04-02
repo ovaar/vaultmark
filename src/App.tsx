@@ -16,7 +16,7 @@ function App() {
   useEffect(() => {
     homeDir()
       .then(async (home) => {
-        const path = `${home}VaultMark`;
+        const path = `${home}/VaultMark`;
         setDefaultPath(path);
         try {
           // Check if vault directory exists by listing it
