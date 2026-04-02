@@ -153,8 +153,17 @@ input:focus {
 }
 
 .file-tree-icon {
-  font-size: 14px;
+  font-size: 12px;
   flex-shrink: 0;
+  width: 12px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.file-tree-type-icon {
+  font-size: 14px;
+  width: auto;
+  color: var(--text-primary);
 }
 
 .file-tree-name {
@@ -320,6 +329,29 @@ input:focus {
 }
 
 /* ======== Editor Area ======== */
+.editor-groups-container {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.editor-group + .editor-group {
+  border-left: 2px solid var(--border);
+}
+
+.editor-group.active-group > .editor-tabs {
+  border-bottom: 1px solid var(--accent);
+}
+
 .editor-area {
   flex: 1;
   display: flex;
@@ -965,6 +997,88 @@ input:focus {
 .welcome-btn-secondary:hover {
   background: var(--accent);
   color: var(--bg-primary);
+}
+
+/* ─── Welcome Screen: Recent Vaults ─── */
+.welcome-recent {
+  margin-bottom: 0.5rem;
+}
+
+.welcome-section-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.6rem;
+  text-align: left;
+}
+
+.welcome-vault-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.welcome-vault-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.welcome-vault-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+
+.welcome-vault-btn:hover {
+  border-color: var(--accent);
+  background: var(--bg-surface);
+}
+
+.welcome-vault-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.welcome-vault-path {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.welcome-vault-remove {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 16px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.welcome-vault-remove:hover {
+  color: var(--danger);
+  background: var(--bg-hover);
+}
+
+.welcome-actions-row {
+  display: flex;
+  gap: 8px;
+}
+
+.welcome-actions-row .welcome-btn-secondary {
+  flex: 1;
 }
 
 /* ─── Table of Contents ─── */

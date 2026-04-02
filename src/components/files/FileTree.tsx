@@ -19,6 +19,7 @@ export function FileTree() {
   const [newName, setNewName] = useState("");
   const [rootDragOver, setRootDragOver] = useState(false);
   const rootDragCounter = useRef(0);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (vaultRoot) {
@@ -91,6 +92,14 @@ export function FileTree() {
     }
   };
 
+  const handleTreeContextMenu = (e: React.MouseEvent) => {
+    // Only show if right-clicking on the tree background, not on an item
+    const target = e.target as HTMLElement;
+    if (target.closest(".file-tree-item") || target.closest(".file-tree-header")) return;
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
+
   return (
     <div
       className={`file-tree${rootDragOver ? " root-drag-over" : ""}`}
@@ -100,6 +109,7 @@ export function FileTree() {
       onDragOver={handleRootDragOver}
       onDragLeave={handleRootDragLeave}
       onDrop={handleRootDrop}
+      onContextMenu={handleTreeContextMenu}
     >
       <div className="file-tree-header">
         <span className="file-tree-title" id="file-tree-title">Files</span>
@@ -160,6 +170,29 @@ export function FileTree() {
         fileTree.map((entry) => (
           <FileTreeItem key={entry.path} entry={entry} depth={0} />
         ))
+      )}
+
+      {contextMenu && (
+        <>
+          <div
+            className="context-menu-overlay"
+            onClick={() => setContextMenu(null)}
+          />
+          <div
+            className="context-menu"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <button onClick={() => { setContextMenu(null); setShowNewInput("file"); }}>
+              New File
+            </button>
+            <button onClick={() => { setContextMenu(null); setShowNewInput("folder"); }}>
+              New Folder
+            </button>
+            <button onClick={() => { setContextMenu(null); handleImportFile(); }}>
+              Import File
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

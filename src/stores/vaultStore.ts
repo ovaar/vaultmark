@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-interface VaultInfo {
+export interface VaultInfo {
   path: string;
   name: string;
   lastOpened: string;

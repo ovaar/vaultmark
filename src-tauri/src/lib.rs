@@ -6,12 +6,69 @@ mod services;
 use commands::ai_commands;
 use commands::backup_commands;
 use commands::file_commands;
+use tauri::menu::{MenuBuilder, SubmenuBuilder};
+use tauri::{Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            let file_menu = SubmenuBuilder::new(app, "File")
+                .text("new-file", "New File")
+                .text("open-vault", "Open Vault...")
+                .separator()
+                .text("save", "Save")
+                .separator()
+                .close_window()
+                .quit()
+                .build()?;
+
+            let edit_menu = SubmenuBuilder::new(app, "Edit")
+                .undo()
+                .redo()
+                .separator()
+                .cut()
+                .copy()
+                .paste()
+                .select_all()
+                .build()?;
+
+            let view_menu = SubmenuBuilder::new(app, "View")
+                .text("toggle-sidebar", "Toggle Sidebar")
+                .text("command-palette", "Command Palette")
+                .separator()
+                .text("mode-edit", "Edit Mode")
+                .text("mode-split", "Split Mode")
+                .text("mode-preview", "Preview Mode")
+                .build()?;
+
+            let menu = MenuBuilder::new(app)
+                .item(&file_menu)
+                .item(&edit_menu)
+                .item(&view_menu)
+                .build()?;
+
+            app.set_menu(menu)?;
+
+            app.on_menu_event(|app_handle, event| {
+                let _ = app_handle;
+                match event.id().as_ref() {
+                    "new-file" | "open-vault" | "save" | "toggle-sidebar" | "command-palette"
+                    | "mode-edit" | "mode-split" | "mode-preview" => {
+                        // These events are handled on the frontend via window menu event listener
+                        if let Some(window) = app_handle.get_webview_window("main") {
+                            let id: &str = event.id().as_ref();
+                            let _ = window.emit("menu-event", id);
+                        }
+                    }
+                    _ => {}
+                }
+            });
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             // File commands
             file_commands::list_files,

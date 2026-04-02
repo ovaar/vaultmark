@@ -4,7 +4,7 @@ import { useFileStore } from "../stores/fileStore";
 
 export function useAutosave(delayMs: number = 1500) {
   const vaultRoot = useFileStore((s) => s.vaultRoot);
-  const openFiles = useEditorStore((s) => s.openFiles);
+  const groups = useEditorStore((s) => s.groups);
   const saveFile = useEditorStore((s) => s.saveFile);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -20,13 +20,15 @@ export function useAutosave(delayMs: number = 1500) {
     [vaultRoot, saveFile, delayMs]
   );
 
-  // Watch for dirty files and save them
+  // Watch for dirty files across all groups and save them
   useEffect(() => {
-    const dirtyFiles = openFiles.filter((f) => f.dirty);
-    for (const file of dirtyFiles) {
-      debouncedSave(file.path);
+    for (const group of groups) {
+      const dirtyFiles = group.openFiles.filter((f) => f.dirty);
+      for (const file of dirtyFiles) {
+        debouncedSave(file.path);
+      }
     }
-  }, [openFiles, debouncedSave]);
+  }, [groups, debouncedSave]);
 
   // Cleanup on unmount
   useEffect(() => {

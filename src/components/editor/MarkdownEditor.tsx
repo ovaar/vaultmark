@@ -8,17 +8,17 @@ import { basicSetup } from "codemirror";
 import { useEditorStore } from "../../stores/editorStore";
 import { useFileStore } from "../../stores/fileStore";
 
-export function MarkdownEditor() {
+export function MarkdownEditor({ groupId }: { groupId: string }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
 
-  const activeFile = useEditorStore((s) => s.activeFile);
-  const openFiles = useEditorStore((s) => s.openFiles);
+  const group = useEditorStore((s) => s.groups.find((g) => g.id === groupId));
   const updateContent = useEditorStore((s) => s.updateContent);
   const saveFile = useEditorStore((s) => s.saveFile);
   const vaultRoot = useFileStore((s) => s.vaultRoot);
 
-  const currentFile = openFiles.find((f) => f.path === activeFile);
+  const activeFile = group?.activeFile ?? null;
+  const currentFile = group?.openFiles.find((f) => f.path === activeFile);
 
   const handleSave = useCallback(() => {
     if (activeFile) {

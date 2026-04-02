@@ -426,11 +426,11 @@ App
 ### 🏁 Sprint 12 — Usability
 **Goal:** Improve UX
 
-- [ ] Always open welcome screen so that the user is able to create a new `vault` or select any existing(known) `vault`(s)
-- [ ] Replace icons in the files list view with `carret-down` when open and `carret-right` when closed, like in vscode.
-- [ ] Right click the empty space of the Files nav should show a context menu with the same options as in the toolbar (create file, create folder, import)
-- [ ] Allow opening multiple files next to eachother like vscode, where you drag a file to a corner that it snaps to that segment.
-- [ ] Add window context menu's
+- [x] Always open welcome screen so that the user is able to create a new `vault` or select any existing(known) `vault`(s)
+- [x] Replace icons in the files list view with `carret-down` when open and `carret-right` when closed, like in vscode.
+- [x] Right click the empty space of the Files nav should show a context menu with the same options as in the toolbar (create file, create folder, import)
+- [x] Allow opening multiple files next to eachother like vscode, where you drag a file to a corner that it snaps to that segment.
+- [x] Add window context menu's
 
 
 ### Sprint 13 - Integration with reMarkable e-Paper tablet

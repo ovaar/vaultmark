@@ -2,11 +2,11 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useEditorStore } from "../../stores/editorStore";
 
-export function Preview() {
-  const activeFile = useEditorStore((s) => s.activeFile);
-  const openFiles = useEditorStore((s) => s.openFiles);
+export function Preview({ groupId }: { groupId: string }) {
+  const group = useEditorStore((s) => s.groups.find((g) => g.id === groupId));
 
-  const currentFile = openFiles.find((f) => f.path === activeFile);
+  const activeFile = group?.activeFile ?? null;
+  const currentFile = group?.openFiles.find((f) => f.path === activeFile);
 
   if (!currentFile) {
     return (

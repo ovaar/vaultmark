@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { homeDir } from "@tauri-apps/api/path";
+import type { VaultInfo } from "../../stores/vaultStore";
 
 interface WelcomeScreenProps {
-  defaultPath: string;
-  onComplete: (path: string) => void;
+  recentVaults: VaultInfo[];
+  onSelectVault: (path: string) => void;
+  onRemoveVault: (path: string) => void;
 }
 
 async function expandTilde(path: string): Promise<string> {
@@ -15,10 +17,18 @@ async function expandTilde(path: string): Promise<string> {
   return path;
 }
 
-export function WelcomeScreen({ defaultPath, onComplete }: WelcomeScreenProps) {
-  const [vaultPath, setVaultPath] = useState(defaultPath);
+export function WelcomeScreen({ recentVaults, onSelectVault, onRemoveVault }: WelcomeScreenProps) {
+  const [vaultPath, setVaultPath] = useState("");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!vaultPath) {
+      homeDir()
+        .then((home) => setVaultPath(`${home}/VaultMark`))
+        .catch(() => setVaultPath("/tmp/VaultMark"));
+    }
+  }, [vaultPath]);
 
   const handleCreate = async () => {
     if (!vaultPath.trim()) return;
@@ -26,7 +36,7 @@ export function WelcomeScreen({ defaultPath, onComplete }: WelcomeScreenProps) {
     setError(null);
     try {
       const resolved = await expandTilde(vaultPath.trim());
-      onComplete(resolved);
+      onSelectVault(resolved);
     } catch (e) {
       setError(String(e));
       setCreating(false);
@@ -37,7 +47,7 @@ export function WelcomeScreen({ defaultPath, onComplete }: WelcomeScreenProps) {
     try {
       const selected = await open({ directory: true, title: "Open Vault" });
       if (selected) {
-        onComplete(selected);
+        onSelectVault(selected);
       }
     } catch (e) {
       setError(String(e));
@@ -47,12 +57,54 @@ export function WelcomeScreen({ defaultPath, onComplete }: WelcomeScreenProps) {
   return (
     <div className="welcome-screen">
       <div className="welcome-card">
-        <h1 className="welcome-title">Welcome to VaultMark</h1>
+        <h1 className="welcome-title">VaultMark</h1>
         <p className="welcome-subtitle">
           Your local-first knowledge manager. All files stay on your machine.
         </p>
 
+        {recentVaults.length > 0 && (
+          <div className="welcome-recent">
+            <h2 className="welcome-section-title">Recent Vaults</h2>
+            <ul className="welcome-vault-list">
+              {recentVaults.map((vault) => (
+                <li key={vault.path} className="welcome-vault-item">
+                  <button
+                    className="welcome-vault-btn"
+                    onClick={() => onSelectVault(vault.path)}
+                  >
+                    <span className="welcome-vault-name">{vault.name}</span>
+                    <span className="welcome-vault-path">{vault.path}</span>
+                  </button>
+                  <button
+                    className="welcome-vault-remove"
+                    onClick={(e) => { e.stopPropagation(); onRemoveVault(vault.path); }}
+                    title="Remove from recent"
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="welcome-divider">
+              <span>or</span>
+            </div>
+          </div>
+        )}
+
         <div className="welcome-form">
+          <div className="welcome-actions-row">
+            <button
+              className="welcome-btn welcome-btn-secondary"
+              onClick={handleOpenExisting}
+            >
+              Open Existing Vault
+            </button>
+          </div>
+
+          <div className="welcome-divider">
+            <span>create new</span>
+          </div>
+
           <label className="welcome-label" htmlFor="vault-path">
             Vault location
           </label>
@@ -75,18 +127,7 @@ export function WelcomeScreen({ defaultPath, onComplete }: WelcomeScreenProps) {
             onClick={handleCreate}
             disabled={creating || !vaultPath.trim()}
           >
-            {creating ? "Creating…" : "Create Vault & Get Started"}
-          </button>
-
-          <div className="welcome-divider">
-            <span>or</span>
-          </div>
-
-          <button
-            className="welcome-btn welcome-btn-secondary"
-            onClick={handleOpenExisting}
-          >
-            Open Existing Vault
+            {creating ? "Creating…" : "Create Vault"}
           </button>
         </div>
       </div>

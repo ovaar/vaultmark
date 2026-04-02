@@ -154,7 +154,10 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
         }}
       >
         <span className="file-tree-icon">
-          {entry.is_dir ? (expanded ? "📂" : "📁") : "📄"}
+          {entry.is_dir ? (expanded ? "▾" : "▸") : " "}
+        </span>
+        <span className="file-tree-icon file-tree-type-icon">
+          {entry.is_dir ? "📁" : "📄"}
         </span>
         {renaming ? (
           <input
