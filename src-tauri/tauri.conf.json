@@ -14,7 +14,9 @@
       {
         "title": "VaultMark",
         "width": 1200,
-        "height": 800
+        "height": 800,
+        "minWidth": 600,
+        "minHeight": 400
       }
     ],
     "security": {
@@ -30,6 +32,13 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    },
+    "category": "Productivity",
+    "shortDescription": "AI-first local knowledge manager",
+    "longDescription": "VaultMark is a local-first, cross-platform desktop knowledge manager built with Tauri and React. Features markdown editing, file management, backups, and AI-ready architecture.",
+    "copyright": "© 2026 Thomas Reynders"
   }
 }

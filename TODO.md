@@ -367,12 +367,12 @@ App
 ### 🏁 Sprint 9 — Packaging & Distribution
 **Goal:** Installable app on all platforms
 
-- [ ] Configure Tauri bundler (DMG, MSI, AppImage)
-- [ ] App icon set
-- [ ] First-run experience (vault creation wizard)
+- [x] Configure Tauri bundler (DMG, MSI, AppImage)
+- [x] App icon set
+- [x] First-run experience (vault creation wizard)
 - [ ] Auto-updater configuration (optional)
-- [ ] README with installation instructions
-- [ ] CI pipeline (GitHub Actions: build + test + bundle)
+- [x] README with installation instructions
+- [x] CI pipeline (GitHub Actions: build + test + bundle)
 
 ---
 

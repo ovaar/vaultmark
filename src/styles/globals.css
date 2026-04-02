@@ -806,3 +806,122 @@ input:focus {
     opacity: 1;
   }
 }
+
+/* ─── Welcome Screen ─── */
+.welcome-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.welcome-card {
+  max-width: 480px;
+  width: 100%;
+  padding: 3rem 2.5rem;
+  text-align: center;
+}
+
+.welcome-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--accent);
+}
+
+.welcome-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+.welcome-form {
+  text-align: left;
+}
+
+.welcome-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  color: var(--text-secondary);
+}
+
+.welcome-input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.welcome-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.welcome-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted, var(--text-secondary));
+  margin: 0.4rem 0 1.2rem;
+}
+
+.welcome-error {
+  color: var(--red, #f38ba8);
+  font-size: 0.85rem;
+  margin-bottom: 0.8rem;
+}
+
+.welcome-btn {
+  width: 100%;
+  padding: 0.7rem;
+  background: var(--accent);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.welcome-btn:hover {
+  opacity: 0.9;
+}
+
+.welcome-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Error Boundary ─── */
+.error-boundary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 1rem;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+}
+
+.error-boundary pre {
+  color: var(--red, #f38ba8);
+  font-size: 0.9rem;
+}
+
+.error-boundary button {
+  padding: 0.5rem 1.5rem;
+  background: var(--accent);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
