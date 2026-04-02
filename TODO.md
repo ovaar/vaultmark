@@ -420,13 +420,17 @@ App
 - [x] When creating a new vault, the `~` is not converted to a canonical path, therefore creating the vault in `src-tauri/~/VaultMark`
 - [x] Items in the Files navigation treeview are still not draggable
 - [x] The opened file tab name text should not be selectable
+- [ ] Iterate on the html 5 drag and drop feature to make it feature complete
+- [ ] When dragging files onto a folder they don't move to the destination folder.
 
 ### 🏁 Sprint 12 — Usability
 **Goal:** Improve UX
 
-- [ ] Allow to drag and drop files from and to folders in the Files navigation tree view.
+- [ ] Always open welcome screen so that the user is able to create a new `vault` or select any existing(known) `vault`(s)
+- [ ] Replace icons in the files list view with `carret-down` when open and `carret-right` when closed, like in vscode.
 - [ ] Right click the empty space of the Files nav should show a context menu with the same options as in the toolbar (create file, create folder, import)
 - [ ] Allow opening multiple files next to eachother like vscode, where you drag a file to a corner that it snaps to that segment.
+- [ ] Add window context menu's
 
 
 ### Sprint 13 - Integration with reMarkable e-Paper tablet
