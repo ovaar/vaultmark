@@ -493,7 +493,7 @@ App
   - Allow selective sync (entire vault or specific files/folders)
 
 
-- [ ] Improve UX and reliability
+- [x] Improve UX and reliability
   - Show sync status (idle, syncing, error)
   - Provide logs for debugging
   - Handle offline scenarios gracefully

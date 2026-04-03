@@ -8,6 +8,7 @@ import type { RemarkableEntry } from "../../types/remarkable";
 export function RemarkablePanel() {
   const [expanded, setExpanded] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [showSyncLog, setShowSyncLog] = useState(false);
   const {
     connection,
     password,
@@ -19,6 +20,9 @@ export function RemarkablePanel() {
     syncPlan,
     syncResult,
     syncing,
+    syncStatus,
+    syncLog,
+    lastSyncTime,
     setConnection,
     setPassword,
     testConnection,
@@ -29,6 +33,7 @@ export function RemarkablePanel() {
     computeSyncPlan,
     executeSync,
     clearSyncResult,
+    clearSyncLog,
   } = useRemarkableStore();
 
   const vaultRoot = useFileStore((s) => s.vaultRoot);
@@ -52,9 +57,10 @@ export function RemarkablePanel() {
   };
 
   const statusIndicator = () => {
+    if (syncing) return "🔄";
     switch (status) {
       case "connected":
-        return "🟢";
+        return syncStatus === "error" ? "🟠" : "🟢";
       case "connecting":
         return "🟡";
       case "error":
@@ -250,6 +256,38 @@ export function RemarkablePanel() {
                     <button className="remarkable-sync-dismiss" onClick={clearSyncResult}>
                       Dismiss
                     </button>
+                  </div>
+                )}
+
+                {lastSyncTime && (
+                  <p className="remarkable-last-sync">
+                    Last sync: {lastSyncTime.toLocaleTimeString()}
+                  </p>
+                )}
+
+                {syncLog.length > 0 && (
+                  <div className="remarkable-sync-log-section">
+                    <button
+                      className="remarkable-sync-log-toggle"
+                      onClick={() => setShowSyncLog(!showSyncLog)}
+                    >
+                      {showSyncLog ? "▼" : "▶"} Sync Log ({syncLog.length})
+                    </button>
+                    {showSyncLog && (
+                      <div className="remarkable-sync-log">
+                        {syncLog.map((entry, idx) => (
+                          <div key={idx} className={`sync-log-entry sync-log-${entry.level}`}>
+                            <span className="sync-log-time">
+                              {entry.timestamp.toLocaleTimeString()}
+                            </span>
+                            <span className="sync-log-msg">{entry.message}</span>
+                          </div>
+                        ))}
+                        <button className="remarkable-sync-log-clear" onClick={clearSyncLog}>
+                          Clear Log
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

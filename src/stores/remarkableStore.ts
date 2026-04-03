@@ -6,6 +6,13 @@ import * as credentialService from "../services/tauriCredentialService";
 const CONNECTION_KEY = "vaultmark-remarkable-connection";
 
 type ConnectionStatus = "disconnected" | "connecting" | "connected" | "error";
+type SyncStatus = "idle" | "planning" | "syncing" | "error";
+
+export interface SyncLogEntry {
+  timestamp: Date;
+  level: "info" | "warn" | "error";
+  message: string;
+}
 
 interface RemarkableStore {
   connection: RemarkableConnection;
@@ -18,6 +25,9 @@ interface RemarkableStore {
   syncPlan: SyncItem[];
   syncResult: SyncResult | null;
   syncing: boolean;
+  syncStatus: SyncStatus;
+  syncLog: SyncLogEntry[];
+  lastSyncTime: Date | null;
 
   setConnection: (conn: Partial<RemarkableConnection>) => void;
   setPassword: (password: string) => void;
@@ -30,6 +40,7 @@ interface RemarkableStore {
   computeSyncPlan: (vaultRoot: string) => Promise<void>;
   executeSync: (vaultRoot: string) => Promise<void>;
   clearSyncResult: () => void;
+  clearSyncLog: () => void;
 }
 
 export const useRemarkableStore = create<RemarkableStore>((set, get) => ({
@@ -43,6 +54,9 @@ export const useRemarkableStore = create<RemarkableStore>((set, get) => ({
   syncPlan: [],
   syncResult: null,
   syncing: false,
+  syncStatus: "idle",
+  syncLog: [],
+  lastSyncTime: null,
 
   setConnection: (conn) => {
     set((state) => ({
@@ -190,7 +204,13 @@ export const useRemarkableStore = create<RemarkableStore>((set, get) => ({
     const { connection, password, status } = get();
     if (status !== "connected") return;
 
-    set({ syncing: true, error: null, syncPlan: [], syncResult: null });
+    const addLog = (level: "info" | "warn" | "error", message: string) => {
+      set((s) => ({ syncLog: [...s.syncLog, { timestamp: new Date(), level, message }] }));
+    };
+
+    set({ syncing: true, syncStatus: "planning", error: null, syncPlan: [], syncResult: null });
+    addLog("info", "Computing sync plan...");
+
     try {
       const plan = await remarkableService.computeSyncPlan(
         connection.host,
@@ -199,9 +219,19 @@ export const useRemarkableStore = create<RemarkableStore>((set, get) => ({
         password,
         vaultRoot
       );
-      set({ syncPlan: plan, syncing: false });
+      const uploads = plan.filter((i) => i.direction === "Upload").length;
+      const downloads = plan.filter((i) => i.direction === "Download").length;
+      const conflicts = plan.filter((i) => i.direction === "Conflict").length;
+      addLog("info", `Plan: ${uploads} uploads, ${downloads} downloads, ${conflicts} conflicts`);
+      set({ syncPlan: plan, syncing: false, syncStatus: "idle" });
     } catch (e: unknown) {
-      set({ error: String(e), syncing: false });
+      const msg = String(e);
+      addLog("error", `Sync plan failed: ${msg}`);
+      if (msg.includes("Connection") || msg.includes("timeout") || msg.includes("refused")) {
+        set({ error: "Device unreachable — check connection", syncing: false, syncStatus: "error", status: "error" });
+      } else {
+        set({ error: msg, syncing: false, syncStatus: "error" });
+      }
     }
   },
 
@@ -209,7 +239,13 @@ export const useRemarkableStore = create<RemarkableStore>((set, get) => ({
     const { connection, password, status, syncPlan } = get();
     if (status !== "connected" || syncPlan.length === 0) return;
 
-    set({ syncing: true, error: null });
+    const addLog = (level: "info" | "warn" | "error", message: string) => {
+      set((s) => ({ syncLog: [...s.syncLog, { timestamp: new Date(), level, message }] }));
+    };
+
+    set({ syncing: true, syncStatus: "syncing", error: null });
+    addLog("info", `Executing sync for ${syncPlan.length} items...`);
+
     try {
       const result = await remarkableService.executeSync(
         connection.host,
@@ -219,13 +255,32 @@ export const useRemarkableStore = create<RemarkableStore>((set, get) => ({
         vaultRoot,
         syncPlan
       );
-      set({ syncResult: result, syncPlan: [], syncing: false });
+      addLog("info", `Sync complete: ${result.uploaded} uploaded, ${result.downloaded} downloaded`);
+      if (result.conflicts.length > 0) {
+        addLog("warn", `Conflicts: ${result.conflicts.join(", ")}`);
+      }
+      if (result.errors.length > 0) {
+        for (const err of result.errors) {
+          addLog("error", err);
+        }
+      }
+      set({ syncResult: result, syncPlan: [], syncing: false, syncStatus: "idle", lastSyncTime: new Date() });
     } catch (e: unknown) {
-      set({ error: String(e), syncing: false });
+      const msg = String(e);
+      addLog("error", `Sync failed: ${msg}`);
+      if (msg.includes("Connection") || msg.includes("timeout") || msg.includes("refused")) {
+        set({ error: "Device unreachable — check connection", syncing: false, syncStatus: "error", status: "error" });
+      } else {
+        set({ error: msg, syncing: false, syncStatus: "error" });
+      }
     }
   },
 
   clearSyncResult: () => {
     set({ syncResult: null, syncPlan: [] });
+  },
+
+  clearSyncLog: () => {
+    set({ syncLog: [] });
   },
 }));

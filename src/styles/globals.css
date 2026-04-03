@@ -1447,6 +1447,72 @@ input:focus {
   border-radius: 4px;
 }
 
+.remarkable-last-sync {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 4px 0;
+}
+
+.remarkable-sync-log-section {
+  margin-top: 6px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 4px;
+}
+
+.remarkable-sync-log-toggle {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 0;
+  width: 100%;
+  text-align: left;
+}
+
+.remarkable-sync-log-toggle:hover {
+  color: var(--text-primary);
+}
+
+.remarkable-sync-log {
+  max-height: 120px;
+  overflow-y: auto;
+  font-size: 11px;
+  font-family: monospace;
+  margin-top: 4px;
+}
+
+.sync-log-entry {
+  display: flex;
+  gap: 6px;
+  padding: 1px 0;
+}
+
+.sync-log-time {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.sync-log-info .sync-log-msg {
+  color: var(--text-primary);
+}
+
+.sync-log-warn .sync-log-msg {
+  color: #e5a100;
+}
+
+.sync-log-error .sync-log-msg {
+  color: #ef4444;
+}
+
+.remarkable-sync-log-clear {
+  margin-top: 4px;
+  padding: 2px 8px;
+  font-size: 10px;
+  background: var(--bg-hover);
+  border-radius: 4px;
+}
+
 .remarkable-empty {
   color: var(--text-muted);
   font-size: 12px;
