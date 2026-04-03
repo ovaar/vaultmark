@@ -480,6 +480,12 @@ App
   - Implementing rust backend for all the features supported by [rmc](https://github.com/ricklupton/rmc) to be able to edit and visualize files from the reMarkable notebook. 
   - Add automated tests 
 
+- [x] Improve text editor 
+  - Add support for rendering for SVGs for any open file.
+  - Review existing editor features to make it a Rich Text Editor.
+  - Add reMarkable PDF support 
+
+
 - [ ] Implement 2-way file synchronization
   - Sync new, updated, and deleted files
   - Handle conflicts:
@@ -492,6 +498,75 @@ App
   - Provide logs for debugging
   - Handle offline scenarios gracefully
 
+### 🏁 Sprint 14 — Cross-Platform Compatibility
+**Goal:** Ensure all features work on Windows, macOS, and Linux
+
+#### Path handling — Rust backend
+
+- [ ] Normalize `pathdiff_relative()` output to forward slashes on Windows
+  - File: `src-tauri/src/services/file_service.rs` (line ~344)
+  - `to_string_lossy()` returns `\` on Windows; add `.replace('\\', "/")`
+  - Same fix for `build_tree()` `rel_path` (line ~113)
+
+#### Path handling — TypeScript frontend
+
+- [ ] Create `src/utils/platform.ts` utility module
+  - `normalizePath(path)` — replace `\` with `/`
+  - `extractFilename(path)` — split on both separators
+  - `extractParentPath(path)` — split on both separators
+  - `getModifierLabel()` — return `⌘` on macOS, `Ctrl` on Windows/Linux
+
+- [ ] Fix `vaultNameFromPath()` in `src/stores/vaultStore.ts` (line ~19)
+  - Only splits on `/`; fails on Windows paths like `C:\Users\...\MyVault`
+  - Split on `/` **and** `\`; strip trailing separators of both types
+
+- [ ] Fix path splitting in `src/components/files/FileTreeItem.tsx` (lines ~72, ~86)
+  - `entry.path.includes("/")` and `lastIndexOf("/")` ignore `\`
+  - Causes rename to move files to root on Windows
+
+- [ ] Fix tab name extraction in `src/components/editor/EditorTabs.tsx` (line ~43)
+  - `file.path.split("/").pop()` returns full path on Windows
+  - Use `extractFilename()` from platform utility
+
+- [ ] Fix filename extraction in `src/components/files/FileTree.tsx` (line ~56)
+  - Import file logic attempts both separators but inconsistently
+  - Normalize path first, then split
+
+- [ ] Fix error-message name extraction in `src/stores/editorStore.ts` (line ~252)
+  - `path.split("/").pop()` — same `/`-only issue
+
+#### Keyboard shortcut display
+
+- [ ] Make shortcut labels platform-aware in `src/components/layout/CommandPalette.tsx`
+  - All 10+ commands hardcode `⌘` symbol (lines ~53–96)
+  - Use `getModifierLabel()` to show `Ctrl` on Windows/Linux
+
+- [ ] Fix tooltip in `src/components/layout/AppLayout.tsx` (line ~107)
+  - `"Show Sidebar (⌘B)"` — hardcoded macOS symbol
+
+- [ ] Fix hint text in `src/components/editor/MarkdownEditor.tsx` (line ~110)
+  - `"press Cmd+N"` — should say `Ctrl+N` on Windows/Linux
+
+#### Tauri bundle configuration
+
+- [ ] Add Windows bundle settings in `src-tauri/tauri.conf.json`
+  - Add `windows` section with signing placeholder and installer config
+
+- [ ] Add Linux bundle dependencies in `src-tauri/tauri.conf.json`
+  - Add `linux.deb.depends` with `libwebkit2gtk-4.1-dev` and related libs
+  - Add `linux.rpm` equivalent for Fedora/RHEL
+
+#### Line endings
+
+- [ ] Normalize line endings to LF on file save
+  - Prevents mixed `\r\n` / `\n` when vaults are shared across platforms
+  - Add normalization in `editorStore.ts` `saveFile()` before write
+
+#### CI hardening
+
+- [ ] Add artifact existence check after `tauri-action` in `.github/workflows/ci.yml`
+  - Verify platform-specific bundles (.dmg, .exe/.msi, .AppImage/.deb) are produced
+
 ---
 
 ## 📊 Priority Matrix
@@ -502,5 +577,6 @@ App
 | P0       | Sprint 2–3 (file tree, editor)           |
 | P1       | Sprint 4 (backups)                       |
 | P1       | Sprint 7 (UX polish)                     |
+| P1       | Sprint 14 (cross-platform compatibility) |
 | P2       | Sprint 5–6 (AI stubs, TypeSpec)          |
 | P3       | Sprint 8–9 (testing, packaging)          |

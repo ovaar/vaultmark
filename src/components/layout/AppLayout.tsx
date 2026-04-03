@@ -3,6 +3,7 @@ import { Sidebar } from "./Sidebar";
 import { EditorTabs } from "../editor/EditorTabs";
 import { MarkdownEditor } from "../editor/MarkdownEditor";
 import { Preview } from "../editor/Preview";
+import { EditorToolbar } from "../editor/EditorToolbar";
 import { StatusBar } from "./StatusBar";
 import { CommandPalette } from "./CommandPalette";
 import { QuickOpen } from "./QuickOpen";
@@ -144,6 +145,9 @@ export function AppLayout({ onSwitchVault, onOpenWelcome }: AppLayoutProps) {
               onClick={() => setActiveGroup(group.id)}
             >
               <EditorTabs groupId={group.id} />
+              {(viewMode === "edit" || viewMode === "split") && (
+                <EditorToolbar groupId={group.id} />
+              )}
               <div className={`editor-area mode-${viewMode}`}>
                 {(viewMode === "edit" || viewMode === "split") && (
                   <div className="editor-pane">

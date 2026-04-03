@@ -113,5 +113,18 @@ export function MarkdownEditor({ groupId }: { groupId: string }) {
     );
   }
 
+  // Binary content (PDF, epub) cannot be edited as text
+  if (
+    currentFile.content.startsWith("data:application/pdf;base64,") ||
+    currentFile.content.startsWith("data:application/epub")
+  ) {
+    return (
+      <div className="editor-empty">
+        <p>This file cannot be edited as text</p>
+        <p className="hint">Switch to Preview mode to view the document</p>
+      </div>
+    );
+  }
+
   return <div ref={editorRef} className="markdown-editor" />;
 }

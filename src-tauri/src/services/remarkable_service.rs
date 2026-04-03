@@ -125,6 +125,42 @@ pub fn read_file_content(
             .and_then(|v| v.as_str())
             .unwrap_or("unknown");
 
+        // For PDF files, return base64-encoded content with marker prefix
+        if file_type == "pdf" {
+            let pdf_path = format!("{}/{}.pdf", XOCHITL_PATH, file_id);
+            match read_sftp_binary(&sftp, &pdf_path) {
+                Ok(pdf_data) => {
+                    use base64::{Engine as _, engine::general_purpose::STANDARD};
+                    let b64 = STANDARD.encode(&pdf_data);
+                    session.disconnect(None, "done", None).ok();
+                    return Ok(format!("data:application/pdf;base64,{}", b64));
+                }
+                Err(e) => {
+                    session.disconnect(None, "done", None).ok();
+                    return Err(AppError::Remarkable(format!(
+                        "Failed to read PDF file: {}",
+                        e
+                    )));
+                }
+            }
+        }
+
+        // For epub files, return base64-encoded content with marker prefix
+        if file_type == "epub" {
+            let epub_path = format!("{}/{}.epub", XOCHITL_PATH, file_id);
+            match read_sftp_binary(&sftp, &epub_path) {
+                Ok(epub_data) => {
+                    use base64::{Engine as _, engine::general_purpose::STANDARD};
+                    let b64 = STANDARD.encode(&epub_data);
+                    session.disconnect(None, "done", None).ok();
+                    return Ok(format!("data:application/epub+zip;base64,{}", b64));
+                }
+                Err(_) => {
+                    // Fall through — some epub entries have .txt alongside
+                }
+            }
+        }
+
         // For notebooks, try to convert .rm pages to markdown
         if file_type == "notebook" || file_type == "" {
             let page_ids = extract_page_ids(&info);
@@ -168,7 +204,7 @@ pub fn read_file_content(
 
         session.disconnect(None, "done", None).ok();
         return Err(AppError::Remarkable(format!(
-            "Cannot read '{}' format as text. Only plain text and notebook documents are supported.",
+            "Cannot read '{}' format. Supported: plain text, notebook, PDF, and epub documents.",
             file_type
         )));
     }
