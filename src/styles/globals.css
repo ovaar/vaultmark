@@ -1328,3 +1328,339 @@ input:focus {
   font-size: 10px;
   color: var(--text-muted);
 }
+
+.remarkable-guide-btn {
+  width: 100%;
+  padding: 6px 12px;
+  background: var(--accent);
+  color: var(--bg-primary);
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.remarkable-guide-btn:hover {
+  opacity: 0.9;
+}
+
+/* ======== Connection Guide Modal ======== */
+.guide-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 300;
+}
+
+.guide-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 520px;
+  max-width: 92vw;
+  max-height: 85vh;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  z-index: 301;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.guide-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 20px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  z-index: 1;
+}
+
+.guide-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.guide-progress {
+  padding: 16px 20px 0;
+}
+
+.guide-progress-bar {
+  height: 4px;
+  background: var(--bg-surface);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.guide-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.guide-step-label {
+  display: block;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 6px;
+}
+
+.guide-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.guide-step {
+  animation: guide-fade-in 0.2s ease;
+}
+
+.guide-step-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+@keyframes guide-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.guide-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.guide-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.guide-info-box {
+  background: var(--bg-surface);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+}
+
+.guide-info-box strong {
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.guide-info-box ul,
+.guide-info-box ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.guide-info-box li {
+  margin-bottom: 4px;
+}
+
+.guide-info-note {
+  border-left: 3px solid var(--accent);
+}
+
+.guide-info-note strong {
+  display: inline;
+}
+
+.guide-info-note code {
+  background: var(--bg-hover);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.guide-steps-list {
+  padding-left: 20px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.guide-steps-list li {
+  margin-bottom: 6px;
+}
+
+.guide-steps-list strong {
+  color: var(--text-primary);
+}
+
+.guide-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.guide-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.guide-option:hover {
+  border-color: var(--accent-hover);
+}
+
+.guide-option.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
+}
+
+.guide-option-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.guide-option-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.guide-option-desc {
+  width: 100%;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.guide-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.guide-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.guide-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.guide-field input {
+  font-size: 13px;
+  padding: 6px 10px;
+}
+
+.guide-field-row {
+  display: flex;
+  gap: 10px;
+}
+
+.guide-field-row .guide-field {
+  flex: 1;
+}
+
+.guide-error {
+  color: var(--danger);
+  font-size: 12px;
+  background: color-mix(in srgb, var(--danger) 10%, var(--bg-surface));
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.guide-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.guide-btn {
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.guide-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.guide-btn-primary {
+  background: var(--accent);
+  color: var(--bg-primary);
+}
+
+.guide-btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.guide-btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
+
+.guide-btn-secondary:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.guide-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--bg-surface);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: guide-spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes guide-spin {
+  to { transform: rotate(360deg); }
+}
+
+.guide-success-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--success);
+  color: var(--bg-primary);
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}

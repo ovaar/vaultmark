@@ -450,6 +450,8 @@ App
   - Add toolbar option to connect to recent devices
   - Purpose: enable 2-way sync with `vaultmark` files
 
+- [x] Add connection guide workflow to visually guide the user with connecting to their reMarkable.
+
 - [ ] Allow users to connect to their reMarkable via USB
   - Detect device automatically when connected
   - Provide fallback if SSH is unavailable

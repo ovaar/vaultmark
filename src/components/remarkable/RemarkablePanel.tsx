@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useRemarkableStore } from "../../stores/remarkableStore";
+import { ConnectionGuide } from "./ConnectionGuide";
 
 export function RemarkablePanel() {
   const [expanded, setExpanded] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const {
     connection,
     password,
@@ -83,7 +85,14 @@ export function RemarkablePanel() {
       {expanded && (
         <div className="remarkable-content">
           {status !== "connected" ? (
-            <div className="remarkable-connect-form">
+            <>
+              <button
+                className="remarkable-guide-btn"
+                onClick={() => setShowGuide(true)}
+              >
+                Setup Guide
+              </button>
+              <div className="remarkable-connect-form">
               <div className="remarkable-field">
                 <label htmlFor="rm-host">Host</label>
                 <input
@@ -136,6 +145,8 @@ export function RemarkablePanel() {
                 Find your password in Settings → Help → Copyright and licenses
               </p>
             </div>
+            {showGuide && <ConnectionGuide onClose={() => setShowGuide(false)} />}
+            </>
           ) : (
             <div className="remarkable-connected">
               <div className="remarkable-device-info">
