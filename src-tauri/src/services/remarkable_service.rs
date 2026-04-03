@@ -127,18 +127,43 @@ pub fn read_file_content(
 
         // For notebooks, try to convert .rm pages to markdown
         if file_type == "notebook" || file_type == "" {
-            if let Some(pages) = info.get("pages").and_then(|v| v.as_array()) {
-                let page_ids: Vec<&str> = pages
-                    .iter()
-                    .filter_map(|v| v.as_str())
-                    .collect();
+            let page_ids = extract_page_ids(&info);
 
-                if !page_ids.is_empty() {
-                    let result = convert_rm_pages_to_markdown(&sftp, file_id, &page_ids);
+            if !page_ids.is_empty() {
+                let page_refs: Vec<&str> = page_ids.iter().map(|s| s.as_str()).collect();
+                let result = convert_rm_pages_to_markdown(&sftp, file_id, &page_refs);
+                session.disconnect(None, "done", None).ok();
+                return result;
+            }
+
+            // Fallback: list .rm files in the document directory
+            let doc_dir = format!("{}/{}", XOCHITL_PATH, file_id);
+            if let Ok(dir_entries) = sftp.readdir(std::path::Path::new(&doc_dir)) {
+                let mut rm_pages: Vec<String> = dir_entries
+                    .iter()
+                    .filter_map(|(path, _)| {
+                        let name = path.file_name()?.to_str()?;
+                        if name.ends_with(".rm") {
+                            Some(name.trim_end_matches(".rm").to_string())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                rm_pages.sort();
+
+                if !rm_pages.is_empty() {
+                    let page_refs: Vec<&str> = rm_pages.iter().map(|s| s.as_str()).collect();
+                    let result = convert_rm_pages_to_markdown(&sftp, file_id, &page_refs);
                     session.disconnect(None, "done", None).ok();
                     return result;
                 }
             }
+
+            session.disconnect(None, "done", None).ok();
+            return Err(AppError::Remarkable(
+                "Notebook has no pages to convert.".into(),
+            ));
         }
 
         session.disconnect(None, "done", None).ok();
@@ -369,6 +394,38 @@ fn read_sftp_binary(sftp: &ssh2::Sftp, remote_path: &str) -> Result<Vec<u8>, App
     Ok(buf)
 }
 
+/// Extract page IDs from a .content JSON, handling multiple reMarkable firmware formats:
+/// - Old format: `{"pages": ["uuid1", "uuid2"]}`
+/// - New format: `{"cPages": {"pages": [{"id": "uuid1"}, {"id": "uuid2"}]}}`
+/// - Also: `{"cPages": {"pages": [{"id": "uuid1", "idx": {"value": "..."}}, ...]}}`
+fn extract_page_ids(content_info: &serde_json::Value) -> Vec<String> {
+    // Try old format: pages as flat string array
+    if let Some(pages) = content_info.get("pages").and_then(|v| v.as_array()) {
+        let ids: Vec<String> = pages
+            .iter()
+            .filter_map(|v| v.as_str().map(|s| s.to_string()))
+            .collect();
+        if !ids.is_empty() {
+            return ids;
+        }
+    }
+
+    // Try new format: cPages.pages as array of objects with "id" field
+    if let Some(cpages) = content_info.get("cPages") {
+        if let Some(pages) = cpages.get("pages").and_then(|v| v.as_array()) {
+            let ids: Vec<String> = pages
+                .iter()
+                .filter_map(|v| v.get("id").and_then(|id| id.as_str()).map(|s| s.to_string()))
+                .collect();
+            if !ids.is_empty() {
+                return ids;
+            }
+        }
+    }
+
+    Vec::new()
+}
+
 fn convert_rm_pages_to_markdown(
     sftp: &ssh2::Sftp,
     doc_id: &str,
@@ -542,5 +599,62 @@ mod tests {
         // Use a non-routable address to trigger a timeout/error
         let result = connect("192.0.2.1", 22, "root", "test");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_extract_page_ids_old_format() {
+        let content: serde_json::Value = serde_json::from_str(
+            r#"{"fileType":"notebook","pageCount":2,"pages":["aaa-111","bbb-222"]}"#,
+        )
+        .unwrap();
+        let ids = extract_page_ids(&content);
+        assert_eq!(ids, vec!["aaa-111", "bbb-222"]);
+    }
+
+    #[test]
+    fn test_extract_page_ids_cpages_format() {
+        let content: serde_json::Value = serde_json::from_str(
+            r#"{"fileType":"notebook","cPages":{"pages":[{"id":"ccc-333"},{"id":"ddd-444"}]}}"#,
+        )
+        .unwrap();
+        let ids = extract_page_ids(&content);
+        assert_eq!(ids, vec!["ccc-333", "ddd-444"]);
+    }
+
+    #[test]
+    fn test_extract_page_ids_cpages_with_extra_fields() {
+        let content: serde_json::Value = serde_json::from_str(
+            r#"{"fileType":"notebook","cPages":{"pages":[{"id":"eee-555","idx":{"value":"0"}},{"id":"fff-666","idx":{"value":"1"}}]}}"#,
+        )
+        .unwrap();
+        let ids = extract_page_ids(&content);
+        assert_eq!(ids, vec!["eee-555", "fff-666"]);
+    }
+
+    #[test]
+    fn test_extract_page_ids_no_pages() {
+        let content: serde_json::Value =
+            serde_json::from_str(r#"{"fileType":"notebook"}"#).unwrap();
+        let ids = extract_page_ids(&content);
+        assert!(ids.is_empty());
+    }
+
+    #[test]
+    fn test_extract_page_ids_empty_pages_array() {
+        let content: serde_json::Value =
+            serde_json::from_str(r#"{"fileType":"notebook","pages":[]}"#).unwrap();
+        let ids = extract_page_ids(&content);
+        assert!(ids.is_empty());
+    }
+
+    #[test]
+    fn test_extract_page_ids_prefers_old_format() {
+        // If both formats exist, old format (pages) takes precedence
+        let content: serde_json::Value = serde_json::from_str(
+            r#"{"fileType":"notebook","pages":["old-1"],"cPages":{"pages":[{"id":"new-1"}]}}"#,
+        )
+        .unwrap();
+        let ids = extract_page_ids(&content);
+        assert_eq!(ids, vec!["old-1"]);
     }
 }
