@@ -37,6 +37,35 @@
     "macOS": {
       "minimumSystemVersion": "10.15"
     },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "wix": null,
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": [
+          "libwebkit2gtk-4.1-dev",
+          "libappindicator3-dev",
+          "librsvg2-dev",
+          "patchelf"
+        ]
+      },
+      "rpm": {
+        "depends": [
+          "webkit2gtk4.1-devel",
+          "libappindicator-gtk3-devel",
+          "librsvg2-devel"
+        ]
+      },
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    },
     "category": "Productivity",
     "shortDescription": "AI-first local knowledge manager",
     "longDescription": "VaultMark is a local-first, cross-platform desktop knowledge manager built with Tauri and React. Features markdown editing, file management, backups, and AI-ready architecture.",

@@ -40,7 +40,7 @@ export function EditorTabs({ groupId }: EditorTabsProps) {
       onDragOver={handleTabDragOver}
     >
       {group.openFiles.map((file) => {
-        const name = file.path.split("/").pop() || file.path;
+        const name = file.path.replace(/\\/g, "/").split("/").pop() || file.path;
         return (
           <div
             key={file.path}

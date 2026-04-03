@@ -5,6 +5,7 @@ import { useBackupStore } from "../../stores/backupStore";
 import { useVaultStore } from "../../stores/vaultStore";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { generateTocMarkdown } from "../editor/TableOfContents";
+import { getModifierLabel } from "../../utils/platform";
 
 interface Command {
   id: string;
@@ -46,11 +47,13 @@ export function CommandPalette({
   const createBackup = useBackupStore((s) => s.createBackup);
   const recentVaults = useVaultStore((s) => s.recentVaults);
 
+  const mod = getModifierLabel();
+
   const commands: Command[] = [
     {
       id: "new-file",
       label: "New File",
-      shortcut: "⌘N",
+      shortcut: `${mod}N`,
       action: () => {
         const name = prompt("New file name:", "untitled.md");
         if (name) createFile(name.endsWith(".md") ? name : `${name}.md`);
@@ -59,7 +62,7 @@ export function CommandPalette({
     {
       id: "save",
       label: "Save File",
-      shortcut: "⌘S",
+      shortcut: `${mod}S`,
       action: () => {
         if (activeFile) saveFile(vaultRoot, activeFile);
       },
@@ -67,7 +70,7 @@ export function CommandPalette({
     {
       id: "close-tab",
       label: "Close Tab",
-      shortcut: "⌘W",
+      shortcut: `${mod}W`,
       action: () => {
         if (activeFile) closeFile(activeFile);
       },
@@ -75,25 +78,25 @@ export function CommandPalette({
     {
       id: "view-edit",
       label: "View: Edit Mode",
-      shortcut: "⌘⇧E",
+      shortcut: `${mod}⇧E`,
       action: () => setViewMode("edit"),
     },
     {
       id: "view-split",
       label: "View: Split Mode",
-      shortcut: "⌘\\",
+      shortcut: `${mod}\\`,
       action: () => setViewMode("split"),
     },
     {
       id: "view-preview",
       label: "View: Preview Mode",
-      shortcut: "⌘⇧V",
+      shortcut: `${mod}⇧V`,
       action: () => setViewMode("preview"),
     },
     {
       id: "toggle-sidebar",
       label: "Toggle Sidebar",
-      shortcut: "⌘B",
+      shortcut: `${mod}B`,
       action: onToggleSidebar,
     },
     {

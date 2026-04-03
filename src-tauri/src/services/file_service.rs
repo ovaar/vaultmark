@@ -113,7 +113,8 @@ pub fn get_file_tree(vault_root: &str) -> Result<Vec<FileEntry>, AppError> {
                 .strip_prefix(root)
                 .unwrap_or(entry.path().as_path())
                 .to_string_lossy()
-                .to_string();
+                .to_string()
+                .replace('\\', "/");
 
             let modified = metadata.modified().ok().map(|t| {
                 let datetime: chrono::DateTime<chrono::Utc> = t.into();
@@ -347,6 +348,7 @@ fn pathdiff_relative(root: &str, path: &Path) -> String {
         .unwrap_or(path)
         .to_string_lossy()
         .to_string()
+        .replace('\\', "/")
 }
 
 #[cfg(test)]

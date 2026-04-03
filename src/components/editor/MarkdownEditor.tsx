@@ -7,6 +7,7 @@ import { defaultKeymap, indentWithTab } from "@codemirror/commands";
 import { basicSetup } from "codemirror";
 import { useEditorStore } from "../../stores/editorStore";
 import { useFileStore } from "../../stores/fileStore";
+import { getModifierKey } from "../../utils/platform";
 
 export function MarkdownEditor({ groupId }: { groupId: string }) {
   const editorRef = useRef<HTMLDivElement>(null);
@@ -107,7 +108,7 @@ export function MarkdownEditor({ groupId }: { groupId: string }) {
       <div className="editor-empty">
         <p>Select a file to start editing</p>
         <p className="hint">
-          Use the file tree on the left, or press Cmd+N to create a new file
+          Use the file tree on the left, or press {getModifierKey()}+N to create a new file
         </p>
       </div>
     );

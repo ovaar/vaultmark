@@ -16,7 +16,8 @@ interface VaultStore {
 const STORAGE_KEY = "vaultmark-recent-vaults";
 
 function vaultNameFromPath(path: string): string {
-  const parts = path.replace(/\/$/, "").split("/");
+  const normalized = path.replace(/[\\/]+$/, "").replace(/\\/g, "/");
+  const parts = normalized.split("/");
   return parts[parts.length - 1] || "Vault";
 }
 

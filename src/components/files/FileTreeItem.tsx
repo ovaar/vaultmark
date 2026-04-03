@@ -69,9 +69,9 @@ export function FileTreeItem({ entry, depth }: FileTreeItemProps) {
   const submitRename = async () => {
     setRenaming(false);
     if (newName && newName !== entry.name) {
-      const parentPath = entry.path.includes("/")
-        ? entry.path.substring(0, entry.path.lastIndexOf("/"))
-        : "";
+      const normalized = entry.path.replace(/\\/g, "/");
+      const lastSlash = normalized.lastIndexOf("/");
+      const parentPath = lastSlash >= 0 ? normalized.substring(0, lastSlash) : "";
       const newPath = parentPath ? `${parentPath}/${newName}` : newName;
       await renameFile(entry.path, newPath);
     }

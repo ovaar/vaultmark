@@ -53,7 +53,7 @@ export function FileTree() {
       if (!selected) return;
       const files = Array.isArray(selected) ? selected : [selected];
       for (const filePath of files) {
-        const fileName = filePath.split("/").pop() || filePath.split("\\").pop() || "imported";
+        const fileName = filePath.replace(/\\/g, "/").split("/").pop() || "imported";
         await importFile(filePath, fileName, false);
       }
     } catch {

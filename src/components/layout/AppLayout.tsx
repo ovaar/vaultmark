@@ -14,6 +14,7 @@ import { useAutosave } from "../../hooks/useAutosave";
 import { useAutoBackup } from "../../hooks/useAutoBackup";
 import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 import { listen } from "@tauri-apps/api/event";
+import { getModifierLabel } from "../../utils/platform";
 
 interface AppLayoutProps {
   onSwitchVault: (path: string) => void;
@@ -105,7 +106,7 @@ export function AppLayout({ onSwitchVault, onOpenWelcome }: AppLayoutProps) {
               <button
                 className="toolbar-btn"
                 onClick={toggleSidebar}
-                title="Show Sidebar (⌘B)"
+                title={`Show Sidebar (${getModifierLabel()}B)`}
               >
                 ☰
               </button>

@@ -232,6 +232,9 @@ export const useEditorStore = create<EditorStore>((rawSet, get) => {
     }
     if (!file) return;
 
+    // Normalize line endings to LF for cross-platform consistency
+    const normalizedContent = file.content.replace(/\r\n/g, "\n");
+
     try {
       if (path.startsWith("remarkable://")) {
         // Extract fileId from remarkable://{fileId}/{visibleName}
@@ -243,13 +246,13 @@ export const useEditorStore = create<EditorStore>((rawSet, get) => {
           connection.username,
           password,
           fileId,
-          file.content
+          normalizedContent
         );
       } else {
-        await fileService.writeFile(vaultRoot, path, file.content);
+        await fileService.writeFile(vaultRoot, path, normalizedContent);
       }
     } catch (e: unknown) {
-      const name = path.split("/").pop() || path;
+      const name = path.replace(/\\/g, "/").split("/").pop() || path;
       useToastStore.getState().addToast(
         `Failed to save "${name}": ${String(e)}`,
         "error"
