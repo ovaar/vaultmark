@@ -1303,40 +1303,80 @@ input:focus {
   letter-spacing: 0.5px;
 }
 
-.remarkable-entries {
+/* ─── reMarkable Tree ─── */
+.remarkable-tree {
   list-style: none;
-  margin-top: 4px;
+  padding: 0;
+  margin: 0;
 }
 
-.remarkable-entry {
+.remarkable-tree-children {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.remarkable-tree-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 4px;
-  border-radius: 4px;
+  gap: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
   font-size: 12px;
+  user-select: none;
 }
 
-.remarkable-entry:hover {
+.remarkable-tree-item:hover {
   background: var(--bg-hover);
 }
 
-.remarkable-entry-icon {
-  flex-shrink: 0;
-  font-size: 12px;
+.remarkable-tree-item:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+  border-radius: 3px;
 }
 
-.remarkable-entry-name {
+.remarkable-tree-caret {
+  font-size: 8px;
+  width: 12px;
+  flex-shrink: 0;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.remarkable-tree-caret-spacer {
+  width: 12px;
+  flex-shrink: 0;
+}
+
+.remarkable-tree-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.remarkable-tree-name {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.remarkable-entry-date {
+.remarkable-tree-date {
   flex-shrink: 0;
   font-size: 10px;
   color: var(--text-muted);
+}
+
+.remarkable-tree-pin {
+  flex-shrink: 0;
+  font-size: 10px;
+}
+
+.remarkable-tree-empty {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 2px 8px;
 }
 
 .remarkable-guide-btn {

@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRemarkableStore } from "../../stores/remarkableStore";
 import { ConnectionGuide } from "./ConnectionGuide";
+import { RemarkableTreeItem } from "./RemarkableTreeItem";
+import type { RemarkableEntry } from "../../types/remarkable";
 
 export function RemarkablePanel() {
   const [expanded, setExpanded] = useState(false);
@@ -49,18 +51,33 @@ export function RemarkablePanel() {
     }
   };
 
-  const formatTimestamp = (ts: string) => {
-    const num = parseInt(ts, 10);
-    if (isNaN(num)) return ts;
-    try {
-      return new Date(num).toLocaleDateString();
-    } catch {
-      return ts;
-    }
-  };
+  // Build parent→children map for tree navigation
+  const { rootEntries, childrenMap } = useMemo(() => {
+    const map = new Map<string, RemarkableEntry[]>();
+    const roots: RemarkableEntry[] = [];
 
-  const folders = entries.filter((e) => e.entry_type === "collection");
-  const documents = entries.filter((e) => e.entry_type === "document");
+    for (const entry of entries) {
+      const parentId = entry.parent || "";
+      if (!parentId || parentId === "trash") {
+        // root-level entries (skip trash)
+        if (parentId !== "trash") roots.push(entry);
+      } else {
+        const siblings = map.get(parentId) || [];
+        siblings.push(entry);
+        map.set(parentId, siblings);
+      }
+    }
+
+    // Sort: folders first, then alphabetical
+    roots.sort((a, b) => {
+      if (a.entry_type !== b.entry_type) {
+        return a.entry_type === "collection" ? -1 : 1;
+      }
+      return a.visible_name.localeCompare(b.visible_name);
+    });
+
+    return { rootEntries: roots, childrenMap: map };
+  }, [entries]);
 
   return (
     <div className="remarkable-panel" role="region" aria-label="reMarkable">
@@ -171,41 +188,16 @@ export function RemarkablePanel() {
               {entries.length === 0 && !loadingFiles ? (
                 <p className="remarkable-empty">No files found on device</p>
               ) : (
-                <div className="remarkable-file-list">
-                  {folders.length > 0 && (
-                    <div className="remarkable-section">
-                      <span className="remarkable-section-title">Folders</span>
-                      <ul className="remarkable-entries">
-                        {folders.map((f) => (
-                          <li key={f.id} className="remarkable-entry">
-                            <span className="remarkable-entry-icon">📁</span>
-                            <span className="remarkable-entry-name">
-                              {f.visible_name}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {documents.length > 0 && (
-                    <div className="remarkable-section">
-                      <span className="remarkable-section-title">Documents</span>
-                      <ul className="remarkable-entries">
-                        {documents.map((d) => (
-                          <li key={d.id} className="remarkable-entry">
-                            <span className="remarkable-entry-icon">📄</span>
-                            <span className="remarkable-entry-name">
-                              {d.visible_name}
-                            </span>
-                            <span className="remarkable-entry-date">
-                              {formatTimestamp(d.last_modified)}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
+                <ul className="remarkable-tree" role="tree" aria-label="reMarkable files">
+                  {rootEntries.map((entry) => (
+                    <RemarkableTreeItem
+                      key={entry.id}
+                      entry={entry}
+                      childrenMap={childrenMap}
+                      depth={0}
+                    />
+                  ))}
+                </ul>
               )}
             </div>
           )}

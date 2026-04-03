@@ -456,13 +456,8 @@ App
   - The multiple panels must be scrollable (overflow)
   - The user must be able to resize the panels.
 
-- [ ] Implement 2-way file synchronization
-  - Sync new, updated, and deleted files
-  - Handle conflicts:
-    - Option: last-write-wins or manual resolution
-  - Allow selective sync (entire vault or specific files/folders)
-
-- [ ] reMarkable does not natively support the `markdown` file format
+- [x] The user must be able to navigate the files and folders in the remarkable tree listview panels.
+- [ ] Allow the user to edit the remarkable files in the editor reMarkable does not natively support the `markdown` file format
   - Implement markdown → reMarkable format conversion
   - Reference:
     - https://github.com/ricklupton/rmc
@@ -472,6 +467,14 @@ App
     - Lists
     - Text styles
   - Gracefully degrade unsupported features
+
+- [ ] Implement 2-way file synchronization
+  - Sync new, updated, and deleted files
+  - Handle conflicts:
+    - Option: last-write-wins or manual resolution
+  - Allow selective sync (entire vault or specific files/folders)
+
+
 
 - [ ] (Optional) Support reverse conversion
   - Convert reMarkable documents back to markdown where possible
