@@ -2,6 +2,7 @@ import { create } from "zustand";
 import * as fileService from "../services/tauriFileService";
 import * as remarkableService from "../services/tauriRemarkableService";
 import { useRemarkableStore } from "./remarkableStore";
+import { useToastStore } from "./toastStore";
 
 interface OpenFile {
   path: string;
@@ -146,21 +147,33 @@ export const useEditorStore = create<EditorStore>((rawSet, get) => {
       }
     }
 
-    const { connection, password } = useRemarkableStore.getState();
-    const content = await remarkableService.readFileContent(
-      connection.host,
-      connection.port,
-      connection.username,
-      password,
-      fileId
-    );
-    set({
-      groups: updateGroup(state.groups, group.id, (g) => ({
-        ...g,
-        openFiles: [...g.openFiles, { path: remarkablePath, content, dirty: false }],
-        activeFile: remarkablePath,
-      })),
-    });
+    const { connection, password, status } = useRemarkableStore.getState();
+    if (status !== "connected") {
+      useToastStore.getState().addToast("Not connected to reMarkable device", "error");
+      return;
+    }
+
+    try {
+      const content = await remarkableService.readFileContent(
+        connection.host,
+        connection.port,
+        connection.username,
+        password,
+        fileId
+      );
+      set({
+        groups: updateGroup(state.groups, group.id, (g) => ({
+          ...g,
+          openFiles: [...g.openFiles, { path: remarkablePath, content, dirty: false }],
+          activeFile: remarkablePath,
+        })),
+      });
+    } catch (e: unknown) {
+      useToastStore.getState().addToast(
+        `Failed to open "${visibleName}": ${String(e)}`,
+        "error"
+      );
+    }
   },
 
   closeFile: (path: string) => {
@@ -219,20 +232,29 @@ export const useEditorStore = create<EditorStore>((rawSet, get) => {
     }
     if (!file) return;
 
-    if (path.startsWith("remarkable://")) {
-      // Extract fileId from remarkable://{fileId}/{visibleName}
-      const fileId = path.replace("remarkable://", "").split("/")[0];
-      const { connection, password } = useRemarkableStore.getState();
-      await remarkableService.writeFileContent(
-        connection.host,
-        connection.port,
-        connection.username,
-        password,
-        fileId,
-        file.content
+    try {
+      if (path.startsWith("remarkable://")) {
+        // Extract fileId from remarkable://{fileId}/{visibleName}
+        const fileId = path.replace("remarkable://", "").split("/")[0];
+        const { connection, password } = useRemarkableStore.getState();
+        await remarkableService.writeFileContent(
+          connection.host,
+          connection.port,
+          connection.username,
+          password,
+          fileId,
+          file.content
+        );
+      } else {
+        await fileService.writeFile(vaultRoot, path, file.content);
+      }
+    } catch (e: unknown) {
+      const name = path.split("/").pop() || path;
+      useToastStore.getState().addToast(
+        `Failed to save "${name}": ${String(e)}`,
+        "error"
       );
-    } else {
-      await fileService.writeFile(vaultRoot, path, file.content);
+      return;
     }
     set((state) => ({
       groups: state.groups.map((g) => ({
