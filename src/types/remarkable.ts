@@ -17,3 +17,21 @@ export interface RemarkableEntry {
   last_modified: string;
   pinned: boolean;
 }
+
+export type SyncDirection = "Upload" | "Download" | "Conflict";
+
+export interface SyncItem {
+  name: string;
+  local_path: string | null;
+  remote_id: string | null;
+  direction: SyncDirection;
+  local_modified: string | null;
+  remote_modified: string | null;
+}
+
+export interface SyncResult {
+  uploaded: number;
+  downloaded: number;
+  conflicts: string[];
+  errors: string[];
+}

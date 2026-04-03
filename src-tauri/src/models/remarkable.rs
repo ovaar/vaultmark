@@ -45,3 +45,32 @@ pub struct XochitlMetadata {
     pub pinned: Option<bool>,
     pub deleted: Option<bool>,
 }
+
+/// Sync direction for a file
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum SyncDirection {
+    Upload,
+    Download,
+    Conflict,
+}
+
+/// A single file that needs synchronization
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SyncItem {
+    pub name: String,
+    pub local_path: Option<String>,
+    pub remote_id: Option<String>,
+    pub direction: SyncDirection,
+    pub local_modified: Option<String>,
+    pub remote_modified: Option<String>,
+}
+
+/// Result summary of a sync operation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SyncResult {
+    pub uploaded: u32,
+    pub downloaded: u32,
+    pub conflicts: u32,
+    pub errors: Vec<String>,
+}

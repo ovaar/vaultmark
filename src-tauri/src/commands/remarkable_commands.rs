@@ -1,5 +1,5 @@
 use crate::errors::AppError;
-use crate::models::remarkable::{RemarkableDevice, RemarkableEntry};
+use crate::models::remarkable::{RemarkableDevice, RemarkableEntry, SyncItem, SyncResult};
 use crate::services::remarkable_service;
 
 #[tauri::command]
@@ -68,4 +68,27 @@ pub fn remarkable_write_file_content(
     content: &str,
 ) -> Result<(), AppError> {
     remarkable_service::write_file_content(host, port, username, password, file_id, content)
+}
+
+#[tauri::command]
+pub fn remarkable_compute_sync_plan(
+    host: &str,
+    port: u16,
+    username: &str,
+    password: &str,
+    vault_root: &str,
+) -> Result<Vec<SyncItem>, AppError> {
+    remarkable_service::compute_sync_plan(host, port, username, password, vault_root)
+}
+
+#[tauri::command]
+pub fn remarkable_execute_sync(
+    host: &str,
+    port: u16,
+    username: &str,
+    password: &str,
+    vault_root: &str,
+    items: Vec<SyncItem>,
+) -> Result<SyncResult, AppError> {
+    remarkable_service::execute_sync(host, port, username, password, vault_root, &items)
 }

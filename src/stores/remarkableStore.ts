@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { RemarkableConnection, RemarkableEntry } from "../types/remarkable";
+import type { RemarkableConnection, RemarkableEntry, SyncItem, SyncResult } from "../types/remarkable";
 import * as remarkableService from "../services/tauriRemarkableService";
 import * as credentialService from "../services/tauriCredentialService";
 
@@ -15,6 +15,9 @@ interface RemarkableStore {
   error: string | null;
   entries: RemarkableEntry[];
   loadingFiles: boolean;
+  syncPlan: SyncItem[];
+  syncResult: SyncResult | null;
+  syncing: boolean;
 
   setConnection: (conn: Partial<RemarkableConnection>) => void;
   setPassword: (password: string) => void;
@@ -24,6 +27,9 @@ interface RemarkableStore {
   loadSavedConnection: () => void;
   saveCredentials: (vaultPath: string) => Promise<void>;
   loadAndConnect: (vaultPath: string) => Promise<boolean>;
+  computeSyncPlan: (vaultRoot: string) => Promise<void>;
+  executeSync: (vaultRoot: string) => Promise<void>;
+  clearSyncResult: () => void;
 }
 
 export const useRemarkableStore = create<RemarkableStore>((set, get) => ({
@@ -34,6 +40,9 @@ export const useRemarkableStore = create<RemarkableStore>((set, get) => ({
   error: null,
   entries: [],
   loadingFiles: false,
+  syncPlan: [],
+  syncResult: null,
+  syncing: false,
 
   setConnection: (conn) => {
     set((state) => ({
@@ -175,5 +184,48 @@ export const useRemarkableStore = create<RemarkableStore>((set, get) => ({
       set({ status: "disconnected", error: null });
       return false;
     }
+  },
+
+  computeSyncPlan: async (vaultRoot: string) => {
+    const { connection, password, status } = get();
+    if (status !== "connected") return;
+
+    set({ syncing: true, error: null, syncPlan: [], syncResult: null });
+    try {
+      const plan = await remarkableService.computeSyncPlan(
+        connection.host,
+        connection.port,
+        connection.username,
+        password,
+        vaultRoot
+      );
+      set({ syncPlan: plan, syncing: false });
+    } catch (e: unknown) {
+      set({ error: String(e), syncing: false });
+    }
+  },
+
+  executeSync: async (vaultRoot: string) => {
+    const { connection, password, status, syncPlan } = get();
+    if (status !== "connected" || syncPlan.length === 0) return;
+
+    set({ syncing: true, error: null });
+    try {
+      const result = await remarkableService.executeSync(
+        connection.host,
+        connection.port,
+        connection.username,
+        password,
+        vaultRoot,
+        syncPlan
+      );
+      set({ syncResult: result, syncPlan: [], syncing: false });
+    } catch (e: unknown) {
+      set({ error: String(e), syncing: false });
+    }
+  },
+
+  clearSyncResult: () => {
+    set({ syncResult: null, syncPlan: [] });
   },
 }));

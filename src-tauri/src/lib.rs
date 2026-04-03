@@ -98,6 +98,8 @@ pub fn run() {
             remarkable_commands::remarkable_upload_file,
             remarkable_commands::remarkable_read_file_content,
             remarkable_commands::remarkable_write_file_content,
+            remarkable_commands::remarkable_compute_sync_plan,
+            remarkable_commands::remarkable_execute_sync,
             // Credential commands
             credential_commands::save_remarkable_credentials,
             credential_commands::load_remarkable_credentials,

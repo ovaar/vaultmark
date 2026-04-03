@@ -325,6 +325,322 @@ pub fn upload_file(
     Ok(uuid)
 }
 
+// ── Sync operations ────────────────────────────────────────────────
+
+use crate::models::remarkable::{SyncDirection, SyncItem, SyncResult};
+
+/// Compare local vault files with reMarkable entries to detect sync actions.
+pub fn compute_sync_plan(
+    host: &str,
+    port: u16,
+    username: &str,
+    password: &str,
+    vault_root: &str,
+) -> Result<Vec<SyncItem>, AppError> {
+    let entries = list_files(host, port, username, password)?;
+    let mut plan = Vec::new();
+
+    // Collect local .md files
+    let vault_path = std::path::Path::new(vault_root);
+    let local_files = collect_local_md_files(vault_path)?;
+
+    // Build lookup of remote entries by visible_name (documents only)
+    let remote_docs: std::collections::HashMap<String, &RemarkableEntry> = entries
+        .iter()
+        .filter(|e| matches!(e.entry_type, RemarkableEntryType::Document))
+        .map(|e| (e.visible_name.clone(), e))
+        .collect();
+
+    // Build lookup of local files by stem name
+    let local_map: std::collections::HashMap<String, (String, String)> = local_files
+        .iter()
+        .map(|(name, path, modified)| (name.clone(), (path.clone(), modified.clone())))
+        .collect();
+
+    // Check local files against remote
+    for (name, path, local_mod) in &local_files {
+        if let Some(remote) = remote_docs.get(name) {
+            // Both exist — compare timestamps
+            let direction = compare_timestamps(local_mod, &remote.last_modified);
+            if direction != SyncDirection::Conflict
+                || local_mod != &remote.last_modified
+            {
+                plan.push(SyncItem {
+                    name: name.clone(),
+                    local_path: Some(path.clone()),
+                    remote_id: Some(remote.id.clone()),
+                    direction,
+                    local_modified: Some(local_mod.clone()),
+                    remote_modified: Some(remote.last_modified.clone()),
+                });
+            }
+        } else {
+            // Local only — needs upload
+            plan.push(SyncItem {
+                name: name.clone(),
+                local_path: Some(path.clone()),
+                remote_id: None,
+                direction: SyncDirection::Upload,
+                local_modified: Some(local_mod.clone()),
+                remote_modified: None,
+            });
+        }
+    }
+
+    // Check remote files not present locally
+    for (name, remote) in &remote_docs {
+        if !local_map.contains_key(name) {
+            plan.push(SyncItem {
+                name: name.clone(),
+                local_path: None,
+                remote_id: Some(remote.id.clone()),
+                direction: SyncDirection::Download,
+                local_modified: None,
+                remote_modified: Some(remote.last_modified.clone()),
+            });
+        }
+    }
+
+    Ok(plan)
+}
+
+/// Execute a sync plan — upload and download files as needed.
+pub fn execute_sync(
+    host: &str,
+    port: u16,
+    username: &str,
+    password: &str,
+    vault_root: &str,
+    items: &[SyncItem],
+) -> Result<SyncResult, AppError> {
+    let session = connect(host, port, username, password)?;
+    let sftp = session
+        .sftp()
+        .map_err(|e| AppError::Remarkable(format!("Failed to open SFTP: {}", e)))?;
+
+    let mut result = SyncResult {
+        uploaded: 0,
+        downloaded: 0,
+        conflicts: 0,
+        errors: Vec::new(),
+    };
+
+    for item in items {
+        match item.direction {
+            SyncDirection::Upload => {
+                if let Some(local_path) = &item.local_path {
+                    match sync_upload(&session, &sftp, local_path, item.remote_id.as_deref(), &item.name) {
+                        Ok(_) => result.uploaded += 1,
+                        Err(e) => result.errors.push(format!("Upload '{}': {}", item.name, e)),
+                    }
+                }
+            }
+            SyncDirection::Download => {
+                if let Some(remote_id) = &item.remote_id {
+                    match sync_download(&sftp, remote_id, vault_root, &item.name) {
+                        Ok(_) => result.downloaded += 1,
+                        Err(e) => result.errors.push(format!("Download '{}': {}", item.name, e)),
+                    }
+                }
+            }
+            SyncDirection::Conflict => {
+                result.conflicts += 1;
+            }
+        }
+    }
+
+    // Restart xochitl if we uploaded anything
+    if result.uploaded > 0 {
+        exec_command(&session, "systemctl restart xochitl").ok();
+    }
+
+    session.disconnect(None, "done", None).ok();
+    Ok(result)
+}
+
+fn sync_upload(
+    session: &Session,
+    sftp: &ssh2::Sftp,
+    local_path: &str,
+    remote_id: Option<&str>,
+    visible_name: &str,
+) -> Result<(), AppError> {
+    let content = std::fs::read_to_string(local_path)
+        .map_err(|e| AppError::Remarkable(format!("Failed to read local file: {}", e)))?;
+
+    if let Some(file_id) = remote_id {
+        // Update existing remote file
+        let txt_path = format!("{}/{}.txt", XOCHITL_PATH, file_id);
+        write_sftp_file(sftp, &txt_path, content.as_bytes())?;
+
+        // Update metadata timestamp
+        let metadata_path = format!("{}/{}.metadata", XOCHITL_PATH, file_id);
+        if let Ok(meta_str) = read_sftp_text(sftp, &metadata_path) {
+            if let Ok(mut meta) = serde_json::from_str::<serde_json::Value>(&meta_str) {
+                if let Some(obj) = meta.as_object_mut() {
+                    obj.insert(
+                        "lastModified".to_string(),
+                        serde_json::Value::String(
+                            chrono::Utc::now().timestamp_millis().to_string(),
+                        ),
+                    );
+                    obj.insert("modified".to_string(), serde_json::Value::Bool(true));
+                    let updated = serde_json::to_string_pretty(&meta).unwrap_or(meta_str);
+                    write_sftp_file(sftp, &metadata_path, updated.as_bytes()).ok();
+                }
+            }
+        }
+    } else {
+        // Create new document on device
+        let uuid = exec_command(session, "cat /proc/sys/kernel/random/uuid")?;
+        let uuid = uuid.trim().to_string();
+
+        if uuid.is_empty() {
+            return Err(AppError::Remarkable("Failed to generate UUID".into()));
+        }
+
+        let metadata = serde_json::json!({
+            "deleted": false,
+            "lastModified": chrono::Utc::now().timestamp_millis().to_string(),
+            "lastOpened": "",
+            "lastOpenedPage": 0,
+            "metadatamodified": false,
+            "modified": true,
+            "parent": "",
+            "pinned": false,
+            "synced": false,
+            "type": "DocumentType",
+            "version": 0,
+            "visibleName": visible_name
+        });
+
+        let metadata_path = format!("{}/{}.metadata", XOCHITL_PATH, uuid);
+        write_sftp_file(sftp, &metadata_path, metadata.to_string().as_bytes())?;
+
+        let content_desc = serde_json::json!({
+            "fileType": "epub",
+            "formatVersion": 2,
+            "pageCount": 1
+        });
+        let content_path = format!("{}/{}.content", XOCHITL_PATH, uuid);
+        write_sftp_file(sftp, &content_path, content_desc.to_string().as_bytes())?;
+
+        let txt_path = format!("{}/{}.txt", XOCHITL_PATH, uuid);
+        write_sftp_file(sftp, &txt_path, content.as_bytes())?;
+    }
+
+    Ok(())
+}
+
+fn sync_download(
+    sftp: &ssh2::Sftp,
+    remote_id: &str,
+    vault_root: &str,
+    visible_name: &str,
+) -> Result<(), AppError> {
+    // Try to read text content first
+    let txt_path = format!("{}/{}.txt", XOCHITL_PATH, remote_id);
+    let content = if let Ok(text) = read_sftp_text(sftp, &txt_path) {
+        text
+    } else {
+        // Try reading .rm pages and converting
+        let content_path = format!("{}/{}.content", XOCHITL_PATH, remote_id);
+        let content_info = read_sftp_text(sftp, &content_path).unwrap_or_default();
+
+        if let Ok(info) = serde_json::from_str::<serde_json::Value>(&content_info) {
+            let page_ids = extract_page_ids(&info);
+            if !page_ids.is_empty() {
+                let page_refs: Vec<&str> = page_ids.iter().map(|s| s.as_str()).collect();
+                convert_rm_pages_to_markdown(sftp, remote_id, &page_refs)?
+            } else {
+                return Err(AppError::Remarkable(
+                    "No downloadable content for this document".into(),
+                ));
+            }
+        } else {
+            return Err(AppError::Remarkable(
+                "Cannot read document content info".into(),
+            ));
+        }
+    };
+
+    // Write to local vault as .md file
+    let filename = if visible_name.ends_with(".md") {
+        visible_name.to_string()
+    } else {
+        format!("{}.md", visible_name)
+    };
+
+    let local_path = std::path::Path::new(vault_root).join(&filename);
+    std::fs::write(&local_path, &content)
+        .map_err(|e| AppError::Remarkable(format!("Failed to write local file: {}", e)))?;
+
+    Ok(())
+}
+
+fn collect_local_md_files(
+    vault_root: &std::path::Path,
+) -> Result<Vec<(String, String, String)>, AppError> {
+    let mut files = Vec::new();
+
+    if !vault_root.exists() {
+        return Ok(files);
+    }
+
+    for entry in walkdir::WalkDir::new(vault_root)
+        .max_depth(3)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
+        let path = entry.path();
+        if path.is_file() {
+            if let Some(ext) = path.extension() {
+                if ext == "md" {
+                    let name = path
+                        .file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("unknown")
+                        .to_string();
+
+                    let path_str = path.to_string_lossy().to_string();
+
+                    let modified = path
+                        .metadata()
+                        .ok()
+                        .and_then(|m| m.modified().ok())
+                        .map(|t| {
+                            let duration = t
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .unwrap_or_default();
+                            duration.as_millis().to_string()
+                        })
+                        .unwrap_or_default();
+
+                    files.push((name, path_str, modified));
+                }
+            }
+        }
+    }
+
+    Ok(files)
+}
+
+fn compare_timestamps(local_mod: &str, remote_mod: &str) -> SyncDirection {
+    let local_ts: u64 = local_mod.parse().unwrap_or(0);
+    let remote_ts: u64 = remote_mod.parse().unwrap_or(0);
+
+    if local_ts == 0 || remote_ts == 0 {
+        SyncDirection::Conflict
+    } else if local_ts > remote_ts {
+        SyncDirection::Upload
+    } else if remote_ts > local_ts {
+        SyncDirection::Download
+    } else {
+        // Same timestamp, no sync needed — mark as conflict to skip
+        SyncDirection::Conflict
+    }
+}
+
 // ── Internal helpers ────────────────────────────────────────────────
 
 fn connect(host: &str, port: u16, username: &str, password: &str) -> Result<Session, AppError> {

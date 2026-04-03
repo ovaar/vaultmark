@@ -486,7 +486,7 @@ App
   - Add reMarkable PDF support 
 
 
-- [ ] Implement 2-way file synchronization
+- [x] Implement 2-way file synchronization
   - Sync new, updated, and deleted files
   - Handle conflicts:
     - Option: last-write-wins or manual resolution

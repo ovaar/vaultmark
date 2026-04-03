@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { RemarkableDevice, RemarkableEntry } from "../types/remarkable";
+import type { RemarkableDevice, RemarkableEntry, SyncItem, SyncResult } from "../types/remarkable";
 
 export async function testConnection(
   host: string,
@@ -88,5 +88,39 @@ export async function writeFileContent(
     password,
     fileId,
     content,
+  });
+}
+
+export async function computeSyncPlan(
+  host: string,
+  port: number,
+  username: string,
+  password: string,
+  vaultRoot: string
+): Promise<SyncItem[]> {
+  return invoke("remarkable_compute_sync_plan", {
+    host,
+    port,
+    username,
+    password,
+    vaultRoot,
+  });
+}
+
+export async function executeSync(
+  host: string,
+  port: number,
+  username: string,
+  password: string,
+  vaultRoot: string,
+  items: SyncItem[]
+): Promise<SyncResult> {
+  return invoke("remarkable_execute_sync", {
+    host,
+    port,
+    username,
+    password,
+    vaultRoot,
+    items,
   });
 }

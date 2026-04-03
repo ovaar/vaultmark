@@ -16,6 +16,9 @@ export function RemarkablePanel() {
     error,
     entries,
     loadingFiles,
+    syncPlan,
+    syncResult,
+    syncing,
     setConnection,
     setPassword,
     testConnection,
@@ -23,6 +26,9 @@ export function RemarkablePanel() {
     loadFiles,
     loadSavedConnection,
     saveCredentials,
+    computeSyncPlan,
+    executeSync,
+    clearSyncResult,
   } = useRemarkableStore();
 
   const vaultRoot = useFileStore((s) => s.vaultRoot);
@@ -189,6 +195,64 @@ export function RemarkablePanel() {
               >
                 {loadingFiles ? "Loading..." : "Refresh Files"}
               </button>
+
+              <div className="remarkable-sync-section">
+                <button
+                  className="remarkable-sync-btn"
+                  onClick={() => vaultRoot && computeSyncPlan(vaultRoot)}
+                  disabled={syncing || !vaultRoot}
+                >
+                  {syncing ? "Syncing..." : "Sync Files"}
+                </button>
+
+                {syncPlan.length > 0 && (
+                  <div className="remarkable-sync-plan">
+                    <p className="remarkable-sync-summary">
+                      {syncPlan.filter((i) => i.direction === "Upload").length} to upload,{" "}
+                      {syncPlan.filter((i) => i.direction === "Download").length} to download,{" "}
+                      {syncPlan.filter((i) => i.direction === "Conflict").length} conflicts
+                    </p>
+                    <ul className="remarkable-sync-items">
+                      {syncPlan.map((item, idx) => (
+                        <li key={idx} className={`sync-item sync-${item.direction.toLowerCase()}`}>
+                          <span className="sync-direction">
+                            {item.direction === "Upload" ? "↑" : item.direction === "Download" ? "↓" : "⚠"}
+                          </span>
+                          <span className="sync-name">{item.name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      className="remarkable-sync-execute-btn"
+                      onClick={() => vaultRoot && executeSync(vaultRoot)}
+                      disabled={syncing}
+                    >
+                      Execute Sync
+                    </button>
+                  </div>
+                )}
+
+                {syncResult && (
+                  <div className="remarkable-sync-result">
+                    <p>
+                      ✓ {syncResult.uploaded} uploaded, {syncResult.downloaded} downloaded
+                    </p>
+                    {syncResult.conflicts.length > 0 && (
+                      <p className="remarkable-sync-conflicts">
+                        Conflicts: {syncResult.conflicts.join(", ")}
+                      </p>
+                    )}
+                    {syncResult.errors.length > 0 && (
+                      <p className="remarkable-sync-errors">
+                        Errors: {syncResult.errors.join(", ")}
+                      </p>
+                    )}
+                    <button className="remarkable-sync-dismiss" onClick={clearSyncResult}>
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {error && <p className="remarkable-error">{error}</p>}
 
