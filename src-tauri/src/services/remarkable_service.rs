@@ -2,6 +2,7 @@ use crate::errors::AppError;
 use crate::models::remarkable::{
     RemarkableDevice, RemarkableEntry, RemarkableEntryType, XochitlMetadata,
 };
+use crate::services::rm_parser;
 use ssh2::Session;
 use std::io::Read;
 use std::net::TcpStream;
@@ -113,24 +114,41 @@ pub fn read_file_content(
     }
 
     // Try .epub (some reMarkable documents store as epub)
-    // For now, just report that the document is in a non-text format
+    // For now, try to convert .rm page files to markdown with embedded SVG
     let content_path = format!("{}/{}.content", XOCHITL_PATH, file_id);
     let content_info = read_sftp_text(&sftp, &content_path).unwrap_or_default();
 
-    session.disconnect(None, "done", None).ok();
-
-    // Parse .content to identify file type
+    // Parse .content to get page list and file type
     if let Ok(info) = serde_json::from_str::<serde_json::Value>(&content_info) {
         let file_type = info
             .get("fileType")
             .and_then(|v| v.as_str())
             .unwrap_or("unknown");
+
+        // For notebooks, try to convert .rm pages to markdown
+        if file_type == "notebook" || file_type == "" {
+            if let Some(pages) = info.get("pages").and_then(|v| v.as_array()) {
+                let page_ids: Vec<&str> = pages
+                    .iter()
+                    .filter_map(|v| v.as_str())
+                    .collect();
+
+                if !page_ids.is_empty() {
+                    let result = convert_rm_pages_to_markdown(&sftp, file_id, &page_ids);
+                    session.disconnect(None, "done", None).ok();
+                    return result;
+                }
+            }
+        }
+
+        session.disconnect(None, "done", None).ok();
         return Err(AppError::Remarkable(format!(
-            "Cannot read '{}' format as text. Only plain text documents are supported.",
+            "Cannot read '{}' format as text. Only plain text and notebook documents are supported.",
             file_type
         )));
     }
 
+    session.disconnect(None, "done", None).ok();
     Err(AppError::Remarkable(
         "No readable content found for this document.".into(),
     ))
@@ -337,6 +355,65 @@ fn read_sftp_text(sftp: &ssh2::Sftp, remote_path: &str) -> Result<String, AppErr
 
     String::from_utf8(buf)
         .map_err(|_| AppError::Remarkable("File content is not valid UTF-8 text.".into()))
+}
+
+fn read_sftp_binary(sftp: &ssh2::Sftp, remote_path: &str) -> Result<Vec<u8>, AppError> {
+    let mut file = sftp
+        .open(std::path::Path::new(remote_path))
+        .map_err(|e| AppError::Remarkable(format!("Failed to open {}: {}", remote_path, e)))?;
+
+    let mut buf = Vec::new();
+    file.read_to_end(&mut buf)
+        .map_err(|e| AppError::Remarkable(format!("Failed to read {}: {}", remote_path, e)))?;
+
+    Ok(buf)
+}
+
+fn convert_rm_pages_to_markdown(
+    sftp: &ssh2::Sftp,
+    doc_id: &str,
+    page_ids: &[&str],
+) -> Result<String, AppError> {
+    let mut markdown = String::new();
+
+    for (i, page_id) in page_ids.iter().enumerate() {
+        let rm_path = format!("{}/{}/{}.rm", XOCHITL_PATH, doc_id, page_id);
+
+        if i > 0 {
+            markdown.push_str("\n\n---\n\n");
+        }
+
+        if page_ids.len() > 1 {
+            markdown.push_str(&format!("## Page {}\n\n", i + 1));
+        }
+
+        match read_sftp_binary(sftp, &rm_path) {
+            Ok(data) => match rm_parser::rm_to_svg(&data) {
+                Ok(svg) => {
+                    markdown.push_str(&svg);
+                    markdown.push('\n');
+                }
+                Err(e) => {
+                    markdown.push_str(&format!(
+                        "*Page {} could not be converted: {}*\n",
+                        i + 1,
+                        e
+                    ));
+                }
+            },
+            Err(_) => {
+                markdown.push_str(&format!("*Page {} has no stroke data.*\n", i + 1));
+            }
+        }
+    }
+
+    if markdown.is_empty() {
+        return Err(AppError::Remarkable(
+            "No pages could be converted from this notebook.".into(),
+        ));
+    }
+
+    Ok(markdown)
 }
 
 fn parse_metadata_output(output: &str) -> Vec<RemarkableEntry> {

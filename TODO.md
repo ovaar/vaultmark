@@ -468,16 +468,17 @@ App
     - Text styles
   - Gracefully degrade unsupported features
 
+
+- [x] Support reverse conversion
+  - Convert reMarkable documents back to markdown where possible
+
+
 - [ ] Implement 2-way file synchronization
   - Sync new, updated, and deleted files
   - Handle conflicts:
     - Option: last-write-wins or manual resolution
   - Allow selective sync (entire vault or specific files/folders)
 
-
-
-- [ ] (Optional) Support reverse conversion
-  - Convert reMarkable documents back to markdown where possible
 
 - [ ] Improve UX and reliability
   - Show sync status (idle, syncing, error)
