@@ -91,6 +91,93 @@ pub fn download_file(
     Ok(())
 }
 
+/// Read the text content of a document from the reMarkable device.
+/// Tries .txt, then .epub plain text, then returns a placeholder.
+pub fn read_file_content(
+    host: &str,
+    port: u16,
+    username: &str,
+    password: &str,
+    file_id: &str,
+) -> Result<String, AppError> {
+    let session = connect(host, port, username, password)?;
+    let sftp = session
+        .sftp()
+        .map_err(|e| AppError::Remarkable(format!("Failed to open SFTP: {}", e)))?;
+
+    // Try .txt first (our upload format)
+    let txt_path = format!("{}/{}.txt", XOCHITL_PATH, file_id);
+    if let Ok(content) = read_sftp_text(&sftp, &txt_path) {
+        session.disconnect(None, "done", None).ok();
+        return Ok(content);
+    }
+
+    // Try .epub (some reMarkable documents store as epub)
+    // For now, just report that the document is in a non-text format
+    let content_path = format!("{}/{}.content", XOCHITL_PATH, file_id);
+    let content_info = read_sftp_text(&sftp, &content_path).unwrap_or_default();
+
+    session.disconnect(None, "done", None).ok();
+
+    // Parse .content to identify file type
+    if let Ok(info) = serde_json::from_str::<serde_json::Value>(&content_info) {
+        let file_type = info
+            .get("fileType")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown");
+        return Err(AppError::Remarkable(format!(
+            "Cannot read '{}' format as text. Only plain text documents are supported.",
+            file_type
+        )));
+    }
+
+    Err(AppError::Remarkable(
+        "No readable content found for this document.".into(),
+    ))
+}
+
+/// Write text content back to a document on the reMarkable device.
+pub fn write_file_content(
+    host: &str,
+    port: u16,
+    username: &str,
+    password: &str,
+    file_id: &str,
+    content: &str,
+) -> Result<(), AppError> {
+    let session = connect(host, port, username, password)?;
+    let sftp = session
+        .sftp()
+        .map_err(|e| AppError::Remarkable(format!("Failed to open SFTP: {}", e)))?;
+
+    let txt_path = format!("{}/{}.txt", XOCHITL_PATH, file_id);
+    write_sftp_file(&sftp, &txt_path, content.as_bytes())?;
+
+    // Update lastModified in metadata
+    let metadata_path = format!("{}/{}.metadata", XOCHITL_PATH, file_id);
+    if let Ok(meta_str) = read_sftp_text(&sftp, &metadata_path) {
+        if let Ok(mut meta) = serde_json::from_str::<serde_json::Value>(&meta_str) {
+            if let Some(obj) = meta.as_object_mut() {
+                obj.insert(
+                    "lastModified".to_string(),
+                    serde_json::Value::String(
+                        chrono::Utc::now().timestamp_millis().to_string(),
+                    ),
+                );
+                obj.insert(
+                    "modified".to_string(),
+                    serde_json::Value::Bool(true),
+                );
+                let updated = serde_json::to_string_pretty(&meta).unwrap_or(meta_str);
+                write_sftp_file(&sftp, &metadata_path, updated.as_bytes()).ok();
+            }
+        }
+    }
+
+    session.disconnect(None, "done", None).ok();
+    Ok(())
+}
+
 /// Upload a markdown file to the reMarkable as a plain-text document
 pub fn upload_file(
     host: &str,
@@ -237,6 +324,19 @@ fn write_sftp_file(sftp: &ssh2::Sftp, remote_path: &str, data: &[u8]) -> Result<
         .map_err(|e| AppError::Remarkable(format!("Failed to write remote file: {}", e)))?;
 
     Ok(())
+}
+
+fn read_sftp_text(sftp: &ssh2::Sftp, remote_path: &str) -> Result<String, AppError> {
+    let mut file = sftp
+        .open(std::path::Path::new(remote_path))
+        .map_err(|e| AppError::Remarkable(format!("Failed to open {}: {}", remote_path, e)))?;
+
+    let mut buf = Vec::new();
+    file.read_to_end(&mut buf)
+        .map_err(|e| AppError::Remarkable(format!("Failed to read {}: {}", remote_path, e)))?;
+
+    String::from_utf8(buf)
+        .map_err(|_| AppError::Remarkable("File content is not valid UTF-8 text.".into()))
 }
 
 fn parse_metadata_output(output: &str) -> Vec<RemarkableEntry> {

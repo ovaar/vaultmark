@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import * as fileService from "../services/tauriFileService";
+import * as remarkableService from "../services/tauriRemarkableService";
+import { useRemarkableStore } from "./remarkableStore";
 
 interface OpenFile {
   path: string;
@@ -23,6 +25,7 @@ interface EditorStore {
   activeFile: string | null;
 
   openFile: (vaultRoot: string, path: string) => Promise<void>;
+  openRemarkableFile: (fileId: string, visibleName: string) => Promise<void>;
   closeFile: (path: string) => void;
   setActiveFile: (path: string) => void;
   updateContent: (path: string, content: string) => void;
@@ -117,6 +120,49 @@ export const useEditorStore = create<EditorStore>((rawSet, get) => {
     });
   },
 
+  openRemarkableFile: async (fileId: string, visibleName: string) => {
+    const remarkablePath = `remarkable://${fileId}/${visibleName}`;
+    const state = get();
+    const group = getActiveGroup(state);
+
+    // If already open in this group, just activate
+    const existing = group.openFiles.find((f) => f.path === remarkablePath);
+    if (existing) {
+      set({
+        groups: updateGroup(state.groups, group.id, (g) => ({ ...g, activeFile: remarkablePath })),
+        activeGroupId: group.id,
+      });
+      return;
+    }
+
+    // If open in another group, focus that group
+    for (const g of state.groups) {
+      if (g.id !== group.id && g.openFiles.find((f) => f.path === remarkablePath)) {
+        set({
+          groups: updateGroup(state.groups, g.id, (grp) => ({ ...grp, activeFile: remarkablePath })),
+          activeGroupId: g.id,
+        });
+        return;
+      }
+    }
+
+    const { connection, password } = useRemarkableStore.getState();
+    const content = await remarkableService.readFileContent(
+      connection.host,
+      connection.port,
+      connection.username,
+      password,
+      fileId
+    );
+    set({
+      groups: updateGroup(state.groups, group.id, (g) => ({
+        ...g,
+        openFiles: [...g.openFiles, { path: remarkablePath, content, dirty: false }],
+        activeFile: remarkablePath,
+      })),
+    });
+  },
+
   closeFile: (path: string) => {
     const state = get();
     // Find which group has the file
@@ -173,7 +219,21 @@ export const useEditorStore = create<EditorStore>((rawSet, get) => {
     }
     if (!file) return;
 
-    await fileService.writeFile(vaultRoot, path, file.content);
+    if (path.startsWith("remarkable://")) {
+      // Extract fileId from remarkable://{fileId}/{visibleName}
+      const fileId = path.replace("remarkable://", "").split("/")[0];
+      const { connection, password } = useRemarkableStore.getState();
+      await remarkableService.writeFileContent(
+        connection.host,
+        connection.port,
+        connection.username,
+        password,
+        fileId,
+        file.content
+      );
+    } else {
+      await fileService.writeFile(vaultRoot, path, file.content);
+    }
     set((state) => ({
       groups: state.groups.map((g) => ({
         ...g,

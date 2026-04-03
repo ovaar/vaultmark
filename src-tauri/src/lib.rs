@@ -95,6 +95,8 @@ pub fn run() {
             remarkable_commands::remarkable_list_files,
             remarkable_commands::remarkable_download_file,
             remarkable_commands::remarkable_upload_file,
+            remarkable_commands::remarkable_read_file_content,
+            remarkable_commands::remarkable_write_file_content,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

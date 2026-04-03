@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { RemarkableEntry } from "../../types/remarkable";
+import { useEditorStore } from "../../stores/editorStore";
 
 interface RemarkableTreeItemProps {
   entry: RemarkableEntry;
@@ -15,6 +16,8 @@ export function RemarkableTreeItem({ entry, childrenMap, depth }: RemarkableTree
   const handleClick = () => {
     if (isFolder) {
       setExpanded(!expanded);
+    } else {
+      useEditorStore.getState().openRemarkableFile(entry.id, entry.visible_name);
     }
   };
 

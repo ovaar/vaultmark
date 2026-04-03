@@ -457,7 +457,7 @@ App
   - The user must be able to resize the panels.
 
 - [x] The user must be able to navigate the files and folders in the remarkable tree listview panels.
-- [ ] Allow the user to edit the remarkable files in the editor reMarkable does not natively support the `markdown` file format
+- [x] Allow the user to edit the remarkable files in the editor reMarkable does not natively support the `markdown` file format
   - Implement markdown → reMarkable format conversion
   - Reference:
     - https://github.com/ricklupton/rmc

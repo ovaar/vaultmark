@@ -56,3 +56,37 @@ export async function uploadFile(
     parentId,
   });
 }
+
+export async function readFileContent(
+  host: string,
+  port: number,
+  username: string,
+  password: string,
+  fileId: string
+): Promise<string> {
+  return invoke("remarkable_read_file_content", {
+    host,
+    port,
+    username,
+    password,
+    fileId,
+  });
+}
+
+export async function writeFileContent(
+  host: string,
+  port: number,
+  username: string,
+  password: string,
+  fileId: string,
+  content: string
+): Promise<void> {
+  return invoke("remarkable_write_file_content", {
+    host,
+    port,
+    username,
+    password,
+    fileId,
+    content,
+  });
+}

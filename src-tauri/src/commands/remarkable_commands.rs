@@ -46,3 +46,26 @@ pub fn remarkable_upload_file(
 ) -> Result<String, AppError> {
     remarkable_service::upload_file(host, port, username, password, local_path, visible_name, parent_id)
 }
+
+#[tauri::command]
+pub fn remarkable_read_file_content(
+    host: &str,
+    port: u16,
+    username: &str,
+    password: &str,
+    file_id: &str,
+) -> Result<String, AppError> {
+    remarkable_service::read_file_content(host, port, username, password, file_id)
+}
+
+#[tauri::command]
+pub fn remarkable_write_file_content(
+    host: &str,
+    port: u16,
+    username: &str,
+    password: &str,
+    file_id: &str,
+    content: &str,
+) -> Result<(), AppError> {
+    remarkable_service::write_file_content(host, port, username, password, file_id, content)
+}
