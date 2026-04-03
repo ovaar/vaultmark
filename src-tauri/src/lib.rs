@@ -5,6 +5,7 @@ mod services;
 
 use commands::ai_commands;
 use commands::backup_commands;
+use commands::credential_commands;
 use commands::file_commands;
 use commands::remarkable_commands;
 use tauri::menu::{MenuBuilder, SubmenuBuilder};
@@ -97,6 +98,10 @@ pub fn run() {
             remarkable_commands::remarkable_upload_file,
             remarkable_commands::remarkable_read_file_content,
             remarkable_commands::remarkable_write_file_content,
+            // Credential commands
+            credential_commands::save_remarkable_credentials,
+            credential_commands::load_remarkable_credentials,
+            credential_commands::delete_remarkable_credentials,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRemarkableStore } from "../../stores/remarkableStore";
+import { useFileStore } from "../../stores/fileStore";
 import { ConnectionGuide } from "./ConnectionGuide";
 import { RemarkableTreeItem } from "./RemarkableTreeItem";
 import type { RemarkableEntry } from "../../types/remarkable";
@@ -21,7 +22,10 @@ export function RemarkablePanel() {
     disconnect,
     loadFiles,
     loadSavedConnection,
+    saveCredentials,
   } = useRemarkableStore();
+
+  const vaultRoot = useFileStore((s) => s.vaultRoot);
 
   useEffect(() => {
     loadSavedConnection();
@@ -35,6 +39,9 @@ export function RemarkablePanel() {
     const success = await testConnection();
     if (success) {
       await loadFiles();
+      if (vaultRoot) {
+        await saveCredentials(vaultRoot);
+      }
     }
   };
 
@@ -170,7 +177,7 @@ export function RemarkablePanel() {
                 <span className="remarkable-device-name">
                   {hostname || "reMarkable"}
                 </span>
-                <button className="remarkable-disconnect-btn" onClick={disconnect}>
+                <button className="remarkable-disconnect-btn" onClick={() => disconnect(vaultRoot || undefined)}>
                   Disconnect
                 </button>
               </div>

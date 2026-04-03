@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { RemarkableConnection, RemarkableEntry } from "../types/remarkable";
 import * as remarkableService from "../services/tauriRemarkableService";
+import * as credentialService from "../services/tauriCredentialService";
 
 const CONNECTION_KEY = "vaultmark-remarkable-connection";
 
@@ -18,9 +19,11 @@ interface RemarkableStore {
   setConnection: (conn: Partial<RemarkableConnection>) => void;
   setPassword: (password: string) => void;
   testConnection: () => Promise<boolean>;
-  disconnect: () => void;
+  disconnect: (vaultPath?: string) => void;
   loadFiles: () => Promise<void>;
   loadSavedConnection: () => void;
+  saveCredentials: (vaultPath: string) => Promise<void>;
+  loadAndConnect: (vaultPath: string) => Promise<boolean>;
 }
 
 export const useRemarkableStore = create<RemarkableStore>((set, get) => ({
@@ -72,7 +75,10 @@ export const useRemarkableStore = create<RemarkableStore>((set, get) => ({
     }
   },
 
-  disconnect: () => {
+  disconnect: (vaultPath?: string) => {
+    if (vaultPath) {
+      credentialService.deleteRemarkableCredentials(vaultPath).catch(() => {});
+    }
     set({
       status: "disconnected",
       hostname: null,
@@ -110,6 +116,64 @@ export const useRemarkableStore = create<RemarkableStore>((set, get) => ({
       }
     } catch {
       // ignore parse errors
+    }
+  },
+
+  saveCredentials: async (vaultPath: string) => {
+    const { connection, password, status } = get();
+    if (status !== "connected") return;
+    try {
+      await credentialService.saveRemarkableCredentials(
+        vaultPath,
+        connection.host,
+        connection.port,
+        connection.username,
+        password
+      );
+    } catch {
+      // Non-critical: credential save failure shouldn't break the flow
+    }
+  },
+
+  loadAndConnect: async (vaultPath: string) => {
+    const { status } = get();
+    if (status === "connected" || status === "connecting") return false;
+
+    try {
+      const creds = await credentialService.loadRemarkableCredentials(vaultPath);
+      if (!creds) return false;
+
+      set({
+        connection: { host: creds.host, port: creds.port, username: creds.username },
+        password: creds.password,
+        status: "connecting",
+        error: null,
+      });
+
+      const device = await remarkableService.testConnection(
+        creds.host,
+        creds.port,
+        creds.username,
+        creds.password
+      );
+
+      set({ status: "connected", hostname: device.hostname });
+
+      // Also persist to localStorage for connection form display
+      try {
+        localStorage.setItem(
+          CONNECTION_KEY,
+          JSON.stringify({ host: creds.host, port: creds.port, username: creds.username })
+        );
+      } catch {
+        // ignore
+      }
+
+      return true;
+    } catch {
+      // Silent failure — don't show errors for background auto-connect
+      set({ status: "disconnected", error: null });
+      return false;
     }
   },
 }));

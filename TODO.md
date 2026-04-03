@@ -472,6 +472,13 @@ App
 - [x] Support reverse conversion
   - Convert reMarkable documents back to markdown where possible
 
+- [x] Remember remarkable connection details in post-quantum secure storage.
+  - Restore connection details after connecting to vault
+  - Automatically try connecting to reMarkable notebook after opening vault
+
+- [ ] add support for reMarkable file format .rm version: 6
+  - Plan implementing a https://github.com/ricklupton/rmc
+  - researc
 
 - [ ] Implement 2-way file synchronization
   - Sync new, updated, and deleted files

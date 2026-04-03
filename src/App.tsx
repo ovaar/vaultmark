@@ -5,6 +5,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useFileStore } from "./stores/fileStore";
 import { useVaultStore } from "./stores/vaultStore";
 import { useEditorStore } from "./stores/editorStore";
+import { useRemarkableStore } from "./stores/remarkableStore";
 import "./styles/globals.css";
 
 function App() {
@@ -25,6 +26,15 @@ function App() {
       setVaultRoot(path);
       addVault(path);
       setShowWelcome(false);
+
+      // Try auto-reconnect to reMarkable if credentials are stored
+      const rmStore = useRemarkableStore.getState();
+      rmStore.loadSavedConnection();
+      rmStore.loadAndConnect(path).then((connected) => {
+        if (connected) {
+          useRemarkableStore.getState().loadFiles();
+        }
+      });
     },
     [setVaultRoot, addVault]
   );
