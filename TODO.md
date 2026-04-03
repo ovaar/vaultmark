@@ -451,11 +451,10 @@ App
   - Purpose: enable 2-way sync with `vaultmark` files
 
 - [x] Add connection guide workflow to visually guide the user with connecting to their reMarkable.
-
-- [ ] Allow users to connect to their reMarkable via USB
-  - Detect device automatically when connected
-  - Provide fallback if SSH is unavailable
-  - Handle platform-specific differences
+- [x] Improve UX of reMarkable treeview panel.
+  - The multiple panels should respect the parent container height, and only fill remaining height (flex)
+  - The multiple panels must be scrollable (overflow)
+  - The user must be able to resize the panels.
 
 - [ ] Implement 2-way file synchronization
   - Sync new, updated, and deleted files

@@ -77,13 +77,23 @@ input:focus {
   overflow: hidden;
 }
 
-.sidebar-content {
-  flex: 1;
+.sidebar-section {
   overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
 }
 
-.sidebar-bottom {
-  border-top: 1px solid var(--border);
+.sidebar-resize-handle {
+  height: 5px;
+  flex-shrink: 0;
+  cursor: row-resize;
+  background: var(--border);
+  position: relative;
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle:active {
+  background: var(--accent);
 }
 
 /* ======== File Tree ======== */
