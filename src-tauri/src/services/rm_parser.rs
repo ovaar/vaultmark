@@ -2,6 +2,8 @@ use std::io::{Cursor, Read};
 
 use crate::errors::AppError;
 
+use super::rm_v6_parser;
+
 const RM_HEADER_V3: &str = "reMarkable .lines file, version=3";
 const RM_HEADER_V5: &str = "reMarkable .lines file, version=5";
 const HEADER_LEN: usize = 43;
@@ -28,10 +30,22 @@ struct Layer {
     strokes: Vec<Stroke>,
 }
 
-/// Parse a .rm binary file (v3 or v5) and convert to SVG markup.
+/// Parse a .rm binary file (v3, v5, or v6) and convert to SVG markup.
 pub fn rm_to_svg(data: &[u8]) -> Result<String, AppError> {
+    if rm_v6_parser::is_v6(data) {
+        return rm_v6_parser::rm_v6_to_svg(data);
+    }
     let layers = parse_rm(data)?;
     Ok(render_svg(&layers))
+}
+
+/// Parse a .rm binary file and extract text content (v6 only).
+pub fn rm_to_text(data: &[u8]) -> Result<Option<String>, AppError> {
+    if rm_v6_parser::is_v6(data) {
+        return rm_v6_parser::rm_v6_to_text(data);
+    }
+    // v3/v5 files don't contain text
+    Ok(None)
 }
 
 fn parse_rm(data: &[u8]) -> Result<Vec<Layer>, AppError> {

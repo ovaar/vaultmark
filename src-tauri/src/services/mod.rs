@@ -4,3 +4,4 @@ pub mod credential_service;
 pub mod file_service;
 pub mod remarkable_service;
 pub mod rm_parser;
+pub mod rm_v6_parser;

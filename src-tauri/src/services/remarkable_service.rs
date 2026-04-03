@@ -445,19 +445,27 @@ fn convert_rm_pages_to_markdown(
         }
 
         match read_sftp_binary(sftp, &rm_path) {
-            Ok(data) => match rm_parser::rm_to_svg(&data) {
-                Ok(svg) => {
-                    markdown.push_str(&svg);
+            Ok(data) => {
+                // Try to extract text content (v6 only)
+                if let Ok(Some(text)) = rm_parser::rm_to_text(&data) {
+                    markdown.push_str(&text);
                     markdown.push('\n');
                 }
-                Err(e) => {
-                    markdown.push_str(&format!(
-                        "*Page {} could not be converted: {}*\n",
-                        i + 1,
-                        e
-                    ));
+                // Convert strokes to SVG
+                match rm_parser::rm_to_svg(&data) {
+                    Ok(svg) => {
+                        markdown.push_str(&svg);
+                        markdown.push('\n');
+                    }
+                    Err(e) => {
+                        markdown.push_str(&format!(
+                            "*Page {} could not be converted: {}*\n",
+                            i + 1,
+                            e
+                        ));
+                    }
                 }
-            },
+            }
             Err(_) => {
                 markdown.push_str(&format!("*Page {} has no stroke data.*\n", i + 1));
             }

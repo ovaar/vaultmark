@@ -476,9 +476,9 @@ App
   - Restore connection details after connecting to vault
   - Automatically try connecting to reMarkable notebook after opening vault
 
-- [ ] add support for reMarkable file format .rm version: 6
-  - Plan implementing a https://github.com/ricklupton/rmc
-  - researc
+- [x] add support for reMarkable file format .rm version: 6
+  - Implementing rust backend for all the features supported by [rmc](https://github.com/ricklupton/rmc) to be able to edit and visualize files from the reMarkable notebook. 
+  - Add automated tests 
 
 - [ ] Implement 2-way file synchronization
   - Sync new, updated, and deleted files
