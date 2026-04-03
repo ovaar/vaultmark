@@ -1,6 +1,7 @@
 import { FileTree } from "../files/FileTree";
 import { BackupPanel } from "../backup/BackupPanel";
 import { TableOfContents } from "../editor/TableOfContents";
+import { RemarkablePanel } from "../remarkable/RemarkablePanel";
 
 export function Sidebar() {
   return (
@@ -10,6 +11,7 @@ export function Sidebar() {
         <TableOfContents />
       </div>
       <div className="sidebar-bottom">
+        <RemarkablePanel />
         <BackupPanel />
       </div>
     </div>

@@ -19,6 +19,9 @@ pub enum AppError {
 
     #[error("AI service error: {0}")]
     Ai(String),
+
+    #[error("reMarkable error: {0}")]
+    Remarkable(String),
 }
 
 impl Serialize for AppError {

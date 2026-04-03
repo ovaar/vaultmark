@@ -282,7 +282,7 @@ App
 - [x] Create new folders
 - [x] Display file tree on startup (vault root)
 - [x] Basic CSS layout (flexbox sidebar + main area)
-- [ ] Keyboard navigation in file tree
+- [x] Keyboard navigation in file tree
 
 ### 🏁 Sprint 3 — Markdown Editor & Preview
 **Goal:** Full markdown editing experience
@@ -440,7 +440,7 @@ App
   - https://remarkable.guide/guide/access/ssh.html#finding-your-device-password-and-ip-addresses
   - https://github.com/rM-self-serve/webinterface-wifi
 
-- [ ] Allow users to connect to their reMarkable via ssh
+- [x] Allow users to connect to their reMarkable via ssh
   - Required inputs:
     - IP address
     - Username

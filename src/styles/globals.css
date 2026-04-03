@@ -1156,3 +1156,175 @@ input:focus {
   padding: 0.2rem 0.4rem;
   font-size: 0.8rem;
 }
+
+/* ======== reMarkable Panel ======== */
+.remarkable-panel {
+  font-size: 13px;
+  border-top: 1px solid var(--border);
+}
+
+.remarkable-header {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.remarkable-header:hover {
+  color: var(--text-primary);
+}
+
+.remarkable-content {
+  padding: 4px 12px 12px;
+}
+
+.remarkable-connect-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.remarkable-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.remarkable-field label {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.remarkable-field input {
+  font-size: 12px;
+  padding: 4px 6px;
+}
+
+.remarkable-connect-btn {
+  width: 100%;
+  padding: 6px 12px;
+  background: var(--bg-surface);
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+.remarkable-connect-btn:hover {
+  background: var(--bg-hover);
+}
+
+.remarkable-connect-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.remarkable-error {
+  color: var(--danger);
+  font-size: 11px;
+  margin-top: 4px;
+  word-break: break-word;
+}
+
+.remarkable-hint {
+  color: var(--text-muted);
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+.remarkable-device-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.remarkable-device-name {
+  font-weight: 600;
+  color: var(--success);
+  font-size: 12px;
+}
+
+.remarkable-disconnect-btn {
+  padding: 2px 8px;
+  font-size: 11px;
+  background: var(--bg-surface);
+  border-radius: 4px;
+}
+
+.remarkable-disconnect-btn:hover {
+  background: var(--danger);
+  color: var(--bg-primary);
+}
+
+.remarkable-refresh-btn {
+  width: 100%;
+  padding: 5px 12px;
+  background: var(--bg-surface);
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.remarkable-refresh-btn:hover {
+  background: var(--bg-hover);
+}
+
+.remarkable-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.remarkable-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 8px 0;
+}
+
+.remarkable-section {
+  margin-bottom: 8px;
+}
+
+.remarkable-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.remarkable-entries {
+  list-style: none;
+  margin-top: 4px;
+}
+
+.remarkable-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.remarkable-entry:hover {
+  background: var(--bg-hover);
+}
+
+.remarkable-entry-icon {
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.remarkable-entry-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remarkable-entry-date {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--text-muted);
+}

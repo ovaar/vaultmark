@@ -6,6 +6,7 @@ mod services;
 use commands::ai_commands;
 use commands::backup_commands;
 use commands::file_commands;
+use commands::remarkable_commands;
 use tauri::menu::{MenuBuilder, SubmenuBuilder};
 use tauri::{Emitter, Manager};
 
@@ -89,6 +90,11 @@ pub fn run() {
             ai_commands::ai_summarize,
             ai_commands::ai_search,
             ai_commands::ai_suggest_tags,
+            // reMarkable commands
+            remarkable_commands::remarkable_test_connection,
+            remarkable_commands::remarkable_list_files,
+            remarkable_commands::remarkable_download_file,
+            remarkable_commands::remarkable_upload_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
