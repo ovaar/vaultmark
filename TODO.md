@@ -567,6 +567,86 @@ App
 - [x] Add artifact existence check after `tauri-action` in `.github/workflows/ci.yml`
   - Verify platform-specific bundles (.dmg, .exe/.msi, .AppImage/.deb) are produced
 
+### 🏁 Sprint 15 — Bug Fixes & UX Improvements
+**Goal:** Fix editor split, context menus, markdown rendering, SVG preview, and reMarkable integration issues
+
+#### Editor tab splitting
+
+- [ ] Fix drag-and-drop splitting of editor tabs
+  - Currently `handleTabDrop` in `EditorTabs.tsx` unconditionally calls `splitFileToGroup()`, always creating a new group
+  - `moveFileToGroup()` exists in `editorStore.ts` but is never called from UI
+  - Add drop listeners on each editor group container to detect target group
+  - When dropping on an existing group, call `moveFileToGroup(path, targetGroupId)` instead of `splitFileToGroup(path)`
+  - Add visual drop-zone indicators (CSS highlights) when dragging over groups and edges
+  - Support tab reordering within the same group via drag-and-drop
+
+#### Context menu improvements
+
+- [ ] Prevent multiple context menus from being open simultaneously
+  - `FileTree.tsx` and `FileTreeItem.tsx` each manage independent `contextMenu` state
+  - Right-clicking a new target does not close the previous menu
+  - Implement a shared context menu state (e.g. global store or React context) so opening one menu closes any other
+  - Alternatively, add a global `mousedown`/`contextmenu` listener that dismisses all open menus before a new one renders
+
+- [ ] Add shortcut icons to context menu items
+  - Context menu buttons are plain text only; no keyboard shortcut hints
+  - Reuse the `palette-shortcut` pattern from `CommandPalette.tsx` (monospace, muted color)
+  - Display shortcut labels right-aligned at the end of each menu item (e.g. Rename → `Enter`, Delete → `⌫`)
+  - Add `.context-menu-shortcut` CSS class styled similarly to `.palette-shortcut`
+  - Use `getModifierLabel()` from `src/utils/platform.ts` for cross-platform labels
+
+#### Form usability
+
+- [ ] Submit reMarkable connect form on Enter key press
+  - `RemarkablePanel.tsx` connect form uses a `<div>` with individual inputs, no `<form>` or `onSubmit`
+  - Wrap inputs in a `<form>` element with `onSubmit={handleConnect}` (with `e.preventDefault()`)
+  - Alternatively, add `onKeyDown` handler on the last input (password) that calls `handleConnect` on Enter
+
+#### reMarkable file sync — folder structure
+
+- [ ] Preserve reMarkable folder hierarchy in local vault during sync
+  - `sync_download()` in `remarkable_service.rs` writes all files to `vault_root/` root, flattening the folder structure
+  - Files in reMarkable collections (folders) lose their parent path — e.g. `My Folder/Note` becomes `Note.md` at root
+  - Resolve each document's full path by walking the `parent` chain through the metadata entries
+  - Create matching subdirectories in the vault before writing files
+  - Update `collect_local_md_files()` to be aware of the folder mapping for bidirectional sync
+  - Update the reMarkable panel tree view if needed to reflect the local path structure
+
+#### SVG preview rendering
+
+- [ ] Fix SVGs not fitting the preview container
+  - SVGs from `.rm` files have hardcoded `width="1404" height="1872"` (reMarkable canvas size)
+  - CSS `max-width: 100%` constrains width but `height: auto` can cause overflow or distortion
+  - Remove the hardcoded `width`/`height` attributes from generated SVGs in `rm_parser.rs` `render_svg()` (and `rm_v6_parser.rs`), keeping only the `viewBox`
+  - This lets the SVG scale responsively within the container while preserving aspect ratio
+
+- [ ] Add pan and zoom support for SVG preview
+  - SVGs are currently static; users cannot zoom into detailed stroke drawings
+  - Wrap SVG content in a pannable/zoomable container using mouse drag (pan) and scroll wheel (zoom)
+  - Add CSS `cursor: grab` / `cursor: grabbing` during interaction
+  - Consider using a lightweight library (e.g. `panzoom`) or implementing via CSS `transform: scale() translate()`
+  - Add zoom reset button or double-click-to-reset behavior
+
+#### Markdown rendering fixes
+
+- [ ] Fix nested bullet points rendering as raw `*` text
+  - Nested markdown lists require 2 or 4 spaces of indentation to be recognized by the parser
+  - Investigate whether the content from reMarkable text extraction produces correct indentation
+  - Verify `remark-gfm` parses nested lists correctly; if indentation is wrong, fix in `convert_rm_pages_to_markdown()` or `extract_text()`
+  - Add CSS rules for nested list styling: `.preview ul ul`, `.preview ol ol` with proper indentation
+
+- [ ] Fix newline character `` not rendering as actual newline in preview
+  - The reMarkable v6 parser's `extract_text()` in `rm_v6_parser.rs` replaces literal `\n` (two chars) with actual newlines
+  - Investigate whether the specific Unicode character (`` ) from reMarkable firmware is being passed through unprocessed
+  - Identify the exact Unicode codepoint used by reMarkable for line breaks and map it to `\n` in `extract_text()`
+  - Ensure markdown double-newline (paragraph break) or `<br>` is emitted for proper rendering in preview
+
+- [ ] Hide newline characters in the editor while preserving them on save
+  - The raw newline character `` should not be visible in the CodeMirror editor
+  - Add a CodeMirror decoration/plugin that hides or replaces the character visually (e.g. `Decoration.replace`)
+  - On save back to reMarkable, convert actual newlines back to the reMarkable-specific character
+  - Ensure round-trip fidelity: open → edit → save does not lose or corrupt line break semantics
+
 ---
 
 ## 📊 Priority Matrix
@@ -578,5 +658,6 @@ App
 | P1       | Sprint 4 (backups)                       |
 | P1       | Sprint 7 (UX polish)                     |
 | P1       | Sprint 14 (cross-platform compatibility) |
+| P1       | Sprint 15 (bug fixes & UX improvements)  |
 | P2       | Sprint 5–6 (AI stubs, TypeSpec)          |
 | P3       | Sprint 8–9 (testing, packaging)          |
