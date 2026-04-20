@@ -424,17 +424,21 @@ fn extract_text(scene: &V6Scene) -> Option<String> {
         return None;
     }
 
+    // Include ALL non-empty text items — items with format_code are paragraph
+    // break markers whose text is "\n". Filtering them out loses newlines.
     let text: String = scene
         .text_items
         .iter()
-        .filter(|item| !item.text.is_empty() && item.format_code.is_none())
+        .filter(|item| !item.text.is_empty())
         .map(|item| item.text.as_str())
         .collect();
 
     if text.is_empty() {
         None
     } else {
-        Some(text)
+        // Replace any literal escaped "\n" (two chars: backslash + n) with
+        // actual newlines, in case the reMarkable firmware stores them escaped.
+        Some(text.replace("\\n", "\n"))
     }
 }
 
@@ -805,6 +809,83 @@ mod tests {
         block
     }
 
+    /// Build a single text item (subblock 0) with optional format_code.
+    fn build_text_item_raw(text: &str, item_id: u64, format_code: Option<u32>) -> Vec<u8> {
+        let mut text_item = Vec::new();
+        write_tagged_id(&mut text_item, 2, 1, item_id); // item_id
+        write_tagged_id(&mut text_item, 3, 0, 0); // left_id
+        write_tagged_id(&mut text_item, 4, 0, 0); // right_id
+        write_tagged_u32(&mut text_item, 5, 0);    // deleted_length
+
+        // Value subblock with string + optional format code
+        let mut val_content = Vec::new();
+        write_varuint(&mut val_content, text.len() as u64);
+        val_content.push(1); // is_ascii
+        val_content.extend_from_slice(text.as_bytes());
+        if let Some(fc) = format_code {
+            write_tagged_u32(&mut val_content, 2, fc);
+        }
+        write_subblock_header(&mut text_item, 6, &val_content);
+
+        // Wrap in subblock 0
+        let mut out = Vec::new();
+        write_subblock_header(&mut out, 0, &text_item);
+        out
+    }
+
+    /// Build a RootTextBlock with multiple text items (each with text + optional format_code).
+    fn build_multi_text_block(items: &[(&str, Option<u32>)]) -> Vec<u8> {
+        // Build individual text items
+        let mut all_items = Vec::new();
+        for (i, (text, fc)) in items.iter().enumerate() {
+            let item_bytes = build_text_item_raw(text, (i + 1) as u64, *fc);
+            all_items.extend_from_slice(&item_bytes);
+        }
+
+        // items innermost: varuint count + items
+        let mut items_data = Vec::new();
+        write_varuint(&mut items_data, items.len() as u64);
+        items_data.extend_from_slice(&all_items);
+
+        // inner subblock (tag 1)
+        let mut items_inner = Vec::new();
+        write_subblock_header(&mut items_inner, 1, &items_data);
+
+        // formatting subblock (tag 2) - empty
+        let mut fmt_inner = Vec::new();
+        write_varuint(&mut fmt_inner, 0);
+        let mut fmt_outer = Vec::new();
+        write_subblock_header(&mut fmt_outer, 1, &fmt_inner);
+
+        // outer items content
+        let mut items_outer_content = Vec::new();
+        write_subblock_header(&mut items_outer_content, 1, &items_inner);
+        write_subblock_header(&mut items_outer_content, 2, &fmt_outer);
+
+        // Build outer subblock (tag 2)
+        let mut block_content = Vec::new();
+        write_tagged_id(&mut block_content, 1, 0, 0);
+        write_subblock_header(&mut block_content, 2, &items_outer_content);
+
+        // Position subblock (tag 3)
+        let mut pos_content = Vec::new();
+        pos_content.extend_from_slice(&(-468.0f64).to_le_bytes());
+        pos_content.extend_from_slice(&234.0f64.to_le_bytes());
+        write_subblock_header(&mut block_content, 3, &pos_content);
+
+        write_tagged_f32(&mut block_content, 4, 936.0);
+
+        let mut block = Vec::new();
+        block.extend_from_slice(&(block_content.len() as u32).to_le_bytes());
+        block.push(0);
+        block.push(1);
+        block.push(1);
+        block.push(BLOCK_ROOT_TEXT);
+        block.extend_from_slice(&block_content);
+
+        block
+    }
+
     // ── Tests ──
 
     #[test]
@@ -1060,6 +1141,46 @@ mod tests {
 
         let text = rm_v6_to_text(&data).unwrap();
         assert_eq!(text, Some("Mixed content".to_string()));
+    }
+
+    #[test]
+    fn test_v6_text_paragraph_break_with_format_code() {
+        // Paragraph breaks in the reMarkable CRDT are text items containing "\n"
+        // with a format_code for the paragraph style. These must be preserved.
+        let block = build_multi_text_block(&[
+            ("Hello", None),
+            ("\n", Some(0)),  // paragraph break (plain style)
+            ("World", None),
+        ]);
+        let data = build_v6_file(&[block]);
+        let text = rm_v6_to_text(&data).unwrap();
+        assert_eq!(text, Some("Hello\nWorld".to_string()));
+    }
+
+    #[test]
+    fn test_v6_text_multiple_paragraphs() {
+        let block = build_multi_text_block(&[
+            ("First paragraph", None),
+            ("\n", Some(0)),
+            ("Second paragraph", None),
+            ("\n", Some(1)),  // heading style
+            ("Third paragraph", None),
+        ]);
+        let data = build_v6_file(&[block]);
+        let text = rm_v6_to_text(&data).unwrap();
+        assert_eq!(
+            text,
+            Some("First paragraph\nSecond paragraph\nThird paragraph".to_string())
+        );
+    }
+
+    #[test]
+    fn test_v6_text_literal_escaped_newlines() {
+        // If the reMarkable stores newlines as literal "\n" (two chars: \ + n)
+        let block = build_text_block("Hello\\nWorld");
+        let data = build_v6_file(&[block]);
+        let text = rm_v6_to_text(&data).unwrap();
+        assert_eq!(text, Some("Hello\nWorld".to_string()));
     }
 
     #[test]
